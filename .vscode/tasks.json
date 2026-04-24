@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "cppbuild",
+      "label": "C/C++: g++.exe build ALL files",
+      "command": "C:\\mingw64\\bin\\g++.exe",
+      "args": [
+        "-fdiagnostics-color=always",
+        "-g",
+        "${workspaceFolder}/main.cpp",
+        "${workspaceFolder}/lexer/Lexer.cpp",
+        "${workspaceFolder}/lexer/Token.cpp",
+        "-o",
+        "${workspaceFolder}/compiler.exe"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Сборка всех .cpp файлов проекта"
+    }
+  ]
+}
