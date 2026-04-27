@@ -85,6 +85,7 @@ Token Lexer::nextToken() {
     while (true) {
         char c = peek();
 
+        // Конец строки (файла)
         if (c == '\0') {
             if (state == S_ID) return Token(T_ID, buffer, startLine, startCol);
             if (state == S_INT) return Token(T_INT, buffer, startLine, startCol);
