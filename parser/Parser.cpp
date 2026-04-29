@@ -6,7 +6,7 @@ void Parser::initTable() {
     precedenceTable["-"] = 1;
     precedenceTable["*"] = 2;
     precedenceTable["/"] = 2;
-    precedenceTable["="] = 0; 
+    precedenceTable[":="] = 0; 
 }
 
 Parser::Parser(const std::vector<Token>& tokens)
