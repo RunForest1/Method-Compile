@@ -41,6 +41,12 @@ enum TokenType {
 };
 
 // Структура токена
+/*
+@type Тип токена
+@value Значение токена
+@line Позиция элемента на линии
+@column Позиция элемента по строке
+*/
 struct Token {
     TokenType type;
     std::string value;
