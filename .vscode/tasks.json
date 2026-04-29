@@ -11,6 +11,7 @@
         "${workspaceFolder}/main.cpp",
         "${workspaceFolder}/lexer/Lexer.cpp",
         "${workspaceFolder}/lexer/Token.cpp",
+        "${workspaceFolder}/parser/Parser.cpp",
         "-o",
         "${workspaceFolder}/compiler.exe"
       ],
