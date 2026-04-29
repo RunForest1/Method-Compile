@@ -1,0 +1,31 @@
+# Выходные файлы компилятора (артефакты сборки)
+*.obj
+*.exe
+*.out
+*.app
+*.o
+
+# Файлы отладки и линковки Visual Studio
+*.pdb
+*.ilk
+*.idb
+*.exp
+*.lib
+
+# Временные файлы компилятора MSVC
+vc140.pdb
+vc150.pdb
+vc160.pdb
+vc170.pdb
+
+# Папки отладки и сборки VS Code / VS
+.vscode/
+bin/
+obj/
+x64/
+Debug/
+Release/
+
+# Логи и временные файлы
+*.log
+*.tmp
