@@ -24,7 +24,7 @@ Lexer::Lexer(const std::string& code)
 // ================= ТАБЛИЦА ПЕРЕХОДОВ =================
 
 void Lexer::initTable() {
-    // Настройка переходов согласно слайду 21 лекции
+    // Настройка переходов 
 
     // Из начального состояния S_START (S)
     table[{S_START, C_LETTER}] = S_ID;
@@ -37,7 +37,9 @@ void Lexer::initTable() {
     // Обработка знаков и разделителей
     table[{S_START, C_SEP}]    = S_FINAL; // ( ) , ; [ ] { }
     table[{S_START, C_STAR}]   = S_FINAL; // * может быть оператором или частью комментария, но в S_START это оператор
-    table[{S_START, C_OTHER}]  = S_FINAL; // + -
+    // Операторы плюс и минус
+    table[{S_START, C_PLUS}]  = S_FINAL;
+    table[{S_START, C_MINUS}] = S_FINAL;
     table[{S_START, C_DOT}]    = S_FINAL; // Точка сама по себе — разделитель или ошибка
 
     // Идентификаторы (I)
@@ -75,20 +77,22 @@ void Lexer::initTable() {
 }
 
 // ================= КЛАСС СИМВОЛА =================
-
 Lexer::CharClass Lexer::getCharClass(char c) {
     if (c == '\0') return C_EOF;
+    if (std::isspace(c)) return C_SPACE;
     if (std::isalpha(c) || c == '_') return C_LETTER;
     if (std::isdigit(c)) return C_DIGIT;
     if (c == '.') return C_DOT;
-    if (std::isspace(c)) return C_SPACE;
+    if (c == '+') return C_PLUS;  // Отдельный класс
+    if (c == '-') return C_MINUS; // Отдельный класс
     if (c == ':') return C_COLON;
     if (c == '=') return C_EQUALS;
     if (c == '/') return C_SLASH;
     if (c == '*') return C_STAR;
     if (c == '"') return C_QUOTE;
     if (std::string("(),;[]{}").find(c) != std::string::npos) return C_SEP;
-    return C_OTHER;
+    
+    return C_UNKNOWN; // Если символ совсем странный
 }
 
 // ================= ДВИЖЕНИЕ =================
@@ -186,7 +190,7 @@ TokenType Lexer::mapStateToTokenType(State lastActiveState, const std::string& b
                 return T_SEPARATOR;
             return T_OPERATOR; // Для знаков + - * /
         case S_ID:
-            // Проверка на ключевые слова (слайд 19)
+            // Проверка на ключевые слова 
             if (keywords.count(buffer)) return T_KEYWORD;
             return T_ID;
         case S_INT:
@@ -196,7 +200,8 @@ TokenType Lexer::mapStateToTokenType(State lastActiveState, const std::string& b
         case S_STRING:
             return T_STRING;
         case S_OPERATOR:
-        case S_COMMENT_START: // Если комментарий не начался, '/' это оператор
+        // Если комментарий не начался, '/' это оператор
+        case S_COMMENT_START: 
             return T_OPERATOR;
         default:
             return T_ERROR;
