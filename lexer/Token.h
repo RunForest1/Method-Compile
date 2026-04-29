@@ -41,11 +41,14 @@ enum TokenType {
 };
 
 // Структура токена
+
+
+
 /*
-@type Тип токена
-@value Значение токена
-@line Позиция элемента на линии
-@column Позиция элемента по строке
+@param type Тип токена \n
+@param value Значение токена
+@param line Позиция элемента на линии
+@param column Позиция элемента по строке
 */
 struct Token {
     TokenType type;
