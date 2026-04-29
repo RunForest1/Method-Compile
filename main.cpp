@@ -5,9 +5,7 @@
 
 int main() {
     std::string sourceCode = R"(
-
-        y = "hello";
-
+        y := 10 + 2.5 * (x - 3) / (4 + 1);
     )";
 
     Lexer lexer(sourceCode);
@@ -16,6 +14,10 @@ int main() {
     Token t;
     do {
         t = lexer.nextToken();
+        
+        // Отладка: раскомментируйте, чтобы видеть, что дает лексер
+        if (t.type != T_EOF) std::cout << "Lexed: '" << t.value << "' Type: " << t.type << std::endl;
+
         tokens.push_back(t);
     } while (t.type != T_EOF);
 
@@ -26,6 +28,7 @@ int main() {
     for (auto& tok : rpn) {
         std::cout << tok.value << " ";
     }
+    std::cout << std::endl;
 
     return 0;
 }
