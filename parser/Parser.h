@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <map>
 #include "../lexer/Token.h"
 
 class Parser {
@@ -10,16 +11,20 @@ private:
     std::vector<Token> output; // ОПС
     std::vector<Token> stack;  // стек операторов
 
+    // Таблица приоритетов: Ключ = символ оператора, Значение = число приоритета
+    std::map<std::string, int> precedenceTable;
+
     Token peek();
     Token advance();
 
-    int getPrecedence(const Token& t); // Приоритет
+    int getPrecedence(const Token& t); // Теперь смотрит в таблицу
     bool isOperator(const Token& t);
 
+    void initTable();      // Инициализация таблицы
     void parseExpression();
 
 public:
     Parser(const std::vector<Token>& tokens);
 
-    std::vector<Token> parse(); // возвращает ОПС
+    std::vector<Token> parse();
 };

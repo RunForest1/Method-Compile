@@ -4,7 +4,11 @@
 
 
 int main() {
-    std::string sourceCode = "a = 2 + 3 * 4;";
+    std::string sourceCode = R"(
+
+        y = "hello";
+
+    )";
 
     Lexer lexer(sourceCode);
     std::vector<Token> tokens;
