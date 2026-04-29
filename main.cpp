@@ -5,7 +5,7 @@
 
 int main() {
     std::string sourceCode = R"(
-        names[0] := "Alice"
+        names[0] := "Alice";
         names[1] := "Hello world";
     )";
 
