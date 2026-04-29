@@ -32,9 +32,13 @@ void Lexer::initTable() {
     table[{S_START, C_QUOTE}]  = S_STRING;
     table[{S_START, C_COLON}]  = S_OPERATOR;
     table[{S_START, C_SLASH}]  = S_COMMENT_START;
-    table[{S_START, C_DOT}]    = S_FINAL; // Точка сама по себе — разделитель или ошибка
     table[{S_START, C_SPACE}]  = S_START; // Пробелы игнорируются (S -> S)
     table[{S_START, C_EOF}]    = S_FINAL;
+    // Обработка знаков и разделителей
+    table[{S_START, C_SEP}]    = S_FINAL; // ( ) , ; [ ] { }
+    table[{S_START, C_STAR}]   = S_FINAL; // * может быть оператором или частью комментария, но в S_START это оператор
+    table[{S_START, C_OTHER}]  = S_FINAL; // + -
+    table[{S_START, C_DOT}]    = S_FINAL; // Точка сама по себе — разделитель или ошибка
 
     // Идентификаторы (I)
     table[{S_ID, C_LETTER}] = S_ID;
@@ -145,9 +149,10 @@ Token Lexer::nextToken() {
                 buffer += currentChar;
                 advance();
             } else {
-                // Если перешли в S_FINAL (напр. закрывающая кавычка), 
-                // поглощаем символ и выходим из цикла
-                buffer += currentChar;
+                // Если перешли в S_FINAL, поглощаем символ, ТОЛЬКО если это не конец файла
+                if (currentChar != '\0') {
+                    buffer += currentChar;
+                }
                 advance();
             }
         }
@@ -166,22 +171,20 @@ Token Lexer::nextToken() {
 
     // Определяем финальный тип токена на основе "предпоследнего" состояния
     TokenType finalType = mapStateToTokenType(lastActiveState, buffer);
-
-    // Дополнительная проверка на разделители, если автомат в S_START
-    if (finalType == T_ERROR && lastActiveState == S_START) {
-        char c = peek();
-        if (getCharClass(c) == C_SEP) {
-            return Token(T_SEPARATOR, std::string(1, advance()), startLine, startCol);
-        }
-    }
-
     return Token(finalType, buffer, startLine, startCol);
 }
 
 // ================= ОПРЕДЕЛЕНИЕ ТИПА =================
 
 TokenType Lexer::mapStateToTokenType(State lastActiveState, const std::string& buffer) {
+    if (buffer.empty()) return T_ERROR;
+
     switch (lastActiveState) {
+        case S_START: 
+            // Если мы в буфере имеем разделитель из списка (),;[]{}
+            if (std::string("(),;[]{}").find(buffer[0]) != std::string::npos) 
+                return T_SEPARATOR;
+            return T_OPERATOR; // Для знаков + - * /
         case S_ID:
             // Проверка на ключевые слова (слайд 19)
             if (keywords.count(buffer)) return T_KEYWORD;
