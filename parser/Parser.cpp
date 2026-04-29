@@ -1,17 +1,19 @@
 #include "Parser.h"
 
-// Инициализация таблицы приоритетов
 void Parser::initTable() {
     precedenceTable["+"] = 1;
     precedenceTable["-"] = 1;
     precedenceTable["*"] = 2;
     precedenceTable["/"] = 2;
     precedenceTable[":="] = 0; 
+    
+    // Приоритет индексации массива [] очень высокий (как у постфиксных операций)
+    precedenceTable[OP_INDEX] = 3; 
 }
 
 Parser::Parser(const std::vector<Token>& tokens)
     : tokens(tokens), pos(0) {
-    initTable(); // Заполняем таблицу при создании парсера
+    initTable();
 }
 
 Token Parser::peek() {
@@ -27,7 +29,6 @@ bool Parser::isOperator(const Token& t) {
     return t.type == T_OPERATOR;
 }
 
-// Получаем приоритет из таблицы. Если оператора нет в таблице — возвращаем 0
 int Parser::getPrecedence(const Token& t) {
     if (precedenceTable.count(t.value)) {
         return precedenceTable[t.value];
@@ -39,21 +40,23 @@ void Parser::parseExpression() {
     while (pos < tokens.size()) {
         Token t = advance();
 
-        // 1. Операнды сразу в выходной поток
+        // 1. Операнды: числа, идентификаторы, СТРОКИ
         if (t.type == T_INT || t.type == T_FLOAT || t.type == T_ID || t.type == T_STRING) {
             output.push_back(t);
         }
-        // 2. Операторы обрабатываем через таблицу приоритетов
+        // 2. Операторы (+, -, *, /, :=)
         else if (isOperator(t)) {
+            // Важно: не выталкиваем '[' из стека, пока не встретим ']'
             while (!stack.empty() && 
-                   stack.back().value != "(" &&
+                   stack.back().value != "(" && 
+                   stack.back().value != "[" && 
                    getPrecedence(stack.back()) >= getPrecedence(t)) {
                 output.push_back(stack.back());
                 stack.pop_back();
             }
             stack.push_back(t);
         }
-        // 3. Скобки
+        // 3. Круглые скобки ()
         else if (t.value == "(") {
             stack.push_back(t);
         }
@@ -64,10 +67,36 @@ void Parser::parseExpression() {
             }
             if (!stack.empty()) stack.pop_back(); // Удаляем '('
         }
-        // 4. Конец выражения
+        // 4. Квадратные скобки [] - МАССИВЫ
+        else if (t.value == "[") {
+            // '[' работает как открывающая скобка для индекса
+            stack.push_back(t);
+        }
+        else if (t.value == "]") {
+            // Выгружаем всё, что накопилось внутри скобок (сам индекс)
+            while (!stack.empty() && stack.back().value != "[") {
+                output.push_back(stack.back());
+                stack.pop_back();
+            }
+            
+            if (!stack.empty()) {
+                stack.pop_back(); // Удаляем сам символ '[' из стека
+                
+                // Создаем и добавляем оператор индексации "[]"
+                // В RPN это будет выглядеть как: Array Index []
+                Token indexOp;
+                indexOp.type = T_OPERATOR; // Или можно создать тип T_ARRAY_OP, если есть
+                indexOp.value = OP_INDEX;
+                indexOp.line = t.line;
+                indexOp.column = t.column;
+                output.push_back(indexOp);
+            }
+        }
+        // 5. Конец выражения
         else if (t.value == ";") {
             break;
         }
+        // Игнорируем неизвестные токены (например, лишние разделители, если лексер их шлет)
     }
 
     // Выгружаем остаток стека
