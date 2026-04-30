@@ -1,22 +1,35 @@
 #include <iostream>
 #include "lexer/Lexer.h"
+#include "parser/Parser.h"
+
 
 int main() {
     std::string sourceCode = R"(
-        READ n;
-        a = 10 + 3.14 * b;
-        PRINT a;
+        names[0] := "Alice";
+        names[1] := "Hello world";
     )";
 
     Lexer lexer(sourceCode);
-    Token token;
+    std::vector<Token> tokens;
 
+    Token t;
     do {
-        token = lexer.nextToken();
+        t = lexer.nextToken();
+        
+        // Отладка: раскомментируйте, чтобы видеть, что дает лексер
+        if (t.type != T_EOF) std::cout << "Lexed: '" << t.value << "' Type: " << t.type << std::endl;
 
-        std::cout << token.type << " : " << token.value << std::endl;
+        tokens.push_back(t);
+    } while (t.type != T_EOF);
 
-    } while (token.type != T_EOF);
+    Parser parser(tokens);
+    auto rpn = parser.parse();
+
+    std::cout << "RPN: ";
+    for (auto& tok : rpn) {
+        std::cout << tok.value << " ";
+    }
+    std::cout << std::endl;
 
     return 0;
 }
