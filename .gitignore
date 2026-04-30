@@ -31,5 +31,5 @@ Release/
 *.tmp
 
 
-.gitignore
+.vscode/*
 tasks.json
