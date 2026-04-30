@@ -32,4 +32,7 @@ Release/
 
 
 .vscode/*
+.vscode/tasks.json
+.vscode/
+.vscode
 tasks.json
