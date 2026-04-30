@@ -5,7 +5,8 @@
 
 int main() {
     std::string sourceCode = R"(
-        y := 10 + 2.5 * (x - 3) / (4 + 1);
+        names[0] := "Alice";
+        names[1] := "Hello world";
     )";
 
     Lexer lexer(sourceCode);

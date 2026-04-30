@@ -29,3 +29,5 @@ Release/
 # Логи и временные файлы
 *.log
 *.tmp
+
+tasks.json
