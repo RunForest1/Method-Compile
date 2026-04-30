@@ -30,4 +30,6 @@ Release/
 *.log
 *.tmp
 
+
+.gitignore
 tasks.json

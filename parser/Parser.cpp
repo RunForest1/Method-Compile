@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include <stdexcept> // Для std::runtime_error
 
 void Parser::initTable() {
     precedenceTable["+"] = 1;
@@ -40,14 +41,20 @@ void Parser::parseExpression() {
     while (pos < tokens.size()) {
         Token t = advance();
 
+        // --- ИГНОРИРОВАНИЕ ПУСТЫХ ТОКЕНОВ И РАЗДЕЛИТЕЛЕЙ ---
+        // Если токен пустой или это просто разделитель (кроме скобок, которые обрабатываем отдельно)
+        if (t.value.empty()) {
+            continue; // Пропускаем пустые токены, чтобы не падало с "Unexpected token ''"
+        }
+
         // 1. Операнды: числа, идентификаторы, СТРОКИ
         if (t.type == T_INT || t.type == T_FLOAT || t.type == T_ID || t.type == T_STRING) {
             output.push_back(t);
         }
         // 2. Операторы (+, -, *, /, :=)
         else if (isOperator(t)) {
-            // Важно: не выталкиваем '[' из стека, пока не встретим ']'
-            while (!stack.empty() && 
+             // Важно: не выталкиваем '[' из стека, пока не встретим ']'
+             while (!stack.empty() && 
                    stack.back().value != "(" && 
                    stack.back().value != "[" && 
                    getPrecedence(stack.back()) >= getPrecedence(t)) {
@@ -61,48 +68,63 @@ void Parser::parseExpression() {
             stack.push_back(t);
         }
         else if (t.value == ")") {
-            while (!stack.empty() && stack.back().value != "(") {
+            bool foundOpen = false;
+            while (!stack.empty()) {
+                if (stack.back().value == "(") {
+                    foundOpen = true;
+                    stack.pop_back();
+                    break;
+                }
                 output.push_back(stack.back());
                 stack.pop_back();
             }
-            if (!stack.empty()) stack.pop_back(); // Удаляем '('
+            if (!foundOpen) throw std::runtime_error("Syntax Error: Mismatched ')'");
         }
-        // 4. Квадратные скобки [] - МАССИВЫ
+        // 4. Квадратные скобки []
         else if (t.value == "[") {
-            // '[' работает как открывающая скобка для индекса
             stack.push_back(t);
         }
         else if (t.value == "]") {
-            // Выгружаем всё, что накопилось внутри скобок (сам индекс)
-            while (!stack.empty() && stack.back().value != "[") {
+
+            bool foundOpen = false;
+            while (!stack.empty()) {
+                if (stack.back().value == "[") {
+                    foundOpen = true;
+                    stack.pop_back();
+                    break;
+                }
                 output.push_back(stack.back());
                 stack.pop_back();
             }
+            if (!foundOpen) throw std::runtime_error("Syntax Error: Mismatched ']'");
             
-            if (!stack.empty()) {
-                stack.pop_back(); // Удаляем сам символ '[' из стека
-                
-                // Создаем и добавляем оператор индексации "[]"
-                // В RPN это будет выглядеть как: Array Index []
-                Token indexOp;
-                indexOp.type = T_OPERATOR; // Или можно создать тип T_ARRAY_OP, если есть
-                indexOp.value = OP_INDEX;
-                indexOp.line = t.line;
-                indexOp.column = t.column;
-                output.push_back(indexOp);
-            }
+            Token indexOp;
+            indexOp.type = T_OPERATOR;
+            indexOp.value = OP_INDEX;
+            indexOp.line = t.line;
+            indexOp.column = t.column;
+            output.push_back(indexOp);
         }
-        // 5. Конец выражения
-        else if (t.value == ";") {
+        // 5. Разделители и конец инструкции
+        else if (t.type == T_SEPARATOR) {
             continue;
         }
-        // Игнорируем неизвестные токены (например, лишние разделители, если лексер их шлет)
+        else if (t.type == T_KEYWORD) {
+             throw std::runtime_error("Syntax Error: Unexpected keyword '" + t.value + "' in expression");
+        }
+        else {
+            // Сюда мы попадаем, если токен не распознан
+            throw std::runtime_error("Syntax Error: Unexpected token '" + t.value + "' (Type: " + std::to_string(t.type) + ") at line " + std::to_string(t.line));
+        }
     }
 
-    // Выгружаем остаток стека
+    // Выгрузка остатка стека
     while (!stack.empty()) {
-        output.push_back(stack.back());
-        stack.pop_back();
+         if (stack.back().value == "(" || stack.back().value == "[") {
+             throw std::runtime_error("Syntax Error: Unclosed bracket/parenthesis");
+         }
+         output.push_back(stack.back());
+         stack.pop_back();
     }
 }
 
