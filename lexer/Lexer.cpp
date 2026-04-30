@@ -95,8 +95,9 @@ Token Lexer::nextToken() {
         }
 
         CharClass cc = getCharClass(c);
-
+        // Проверяем есть ли переход
         if (table.count({state, cc})) {
+            // Если переход есть, делаем его
             state = table[{state, cc}];
 
             if (state != S_START)
@@ -104,8 +105,9 @@ Token Lexer::nextToken() {
 
             advance();
         }
+        // Если перехода нет
         else {
-            // ОБРАБОТКА ЗАВЕРШЕНИЯ
+            // Обработка завершения токена
             if (state == S_START) {
                 if (cc == C_SPACE) {
                     advance();
