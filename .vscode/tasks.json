@@ -84,7 +84,8 @@
                 "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "${fileDirname}\\Test.cpp",
                 "${fileDirname}\\Lexer.cpp",  
-                "${fileDirname}\\Token.cpp"   
+                "${fileDirname}\\Token.cpp", 
+                "${fileDirname}\\ConsoleFix.cpp"   
             ],
             "options": {
                 "cwd": "${fileDirname}"

@@ -24,6 +24,8 @@ private:
         S_INT,
         // S_DOT_SEEN: Промежуточное состояние после точки в числе (D в лекциях).
         S_DOT_SEEN,
+        // S_DOT_ONLY: Состояние, если точка стоит сама по себе (не после числа) — это ошибка.
+        S_DOT_ONLY,
         // S_FLOAT: Состояние накопления числа с плавающей точкой (после обнаружения '.').
         S_FLOAT,
         // S_STRING: Состояние внутри строкового литерала (между кавычками).
@@ -85,6 +87,10 @@ private:
     char advance();
     // Преобразование накопленного состояния в TokenType
     TokenType mapStateToTokenType(State lastActiveState, const std::string& buffer);
+    // Логирование ошибки с координатами (line, column) и информацией о проблеме
+    void logError(const Token& t);
+    // Печать строки с ошибкой, выделяя проблемный символ (с помощью '^')
+    void printErrorLine(int errorLine, int errorColumn);
 
 public:
     // Конструктор: принимает исходный код и подготавливает автомат к работе

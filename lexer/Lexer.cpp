@@ -1,5 +1,7 @@
 #include "Lexer.h"
 #include <cctype>
+#include <iostream> // cerr
+#include <sstream> // для формирования строки с указанием позиции ошибки
 
 // Ключевые слова
 static std::map<std::string, TokenType> keywords = {
@@ -40,7 +42,7 @@ void Lexer::initTable() {
     // Операторы плюс и минус
     table[{S_START, C_PLUS}]  = S_FINAL;
     table[{S_START, C_MINUS}] = S_FINAL;
-    table[{S_START, C_DOT}]    = S_FINAL; // Точка сама по себе — разделитель или ошибка
+    table[{S_START, C_DOT}] = S_DOT_ONLY; // Точка сама по себе — ошибка
 
     // Идентификаторы (I)
     table[{S_ID, C_LETTER}] = S_ID;
@@ -57,10 +59,25 @@ void Lexer::initTable() {
     // Вещественные числа (E)
     table[{S_FLOAT, C_DIGIT}] = S_FLOAT;
 
-    // Строки (расширение функциональности)
+    // Строки
     table[{S_STRING, C_LETTER}] = S_STRING;
     table[{S_STRING, C_DIGIT}]  = S_STRING;
     table[{S_STRING, C_SPACE}]  = S_STRING;
+    table[{S_STRING, C_DOT}]    = S_STRING;
+    table[{S_STRING, C_PLUS}]   = S_STRING;
+    table[{S_STRING, C_MINUS}]  = S_STRING;
+    table[{S_STRING, C_LETTER}]  = S_STRING;
+    table[{S_STRING, C_DIGIT}]   = S_STRING;
+    table[{S_STRING, C_SPACE}]   = S_STRING;
+    table[{S_STRING, C_DOT}]     = S_STRING;
+    table[{S_STRING, C_PLUS}]    = S_STRING;
+    table[{S_STRING, C_MINUS}]   = S_STRING;
+    table[{S_STRING, C_SLASH}]   = S_STRING; 
+    table[{S_STRING, C_STAR}]    = S_STRING; 
+    table[{S_STRING, C_COLON}]   = S_STRING; 
+    table[{S_STRING, C_EQUALS}]  = S_STRING; 
+    table[{S_STRING, C_SEP}]     = S_STRING; 
+    table[{S_STRING, C_UNKNOWN}]  = S_STRING;
     table[{S_STRING, C_QUOTE}]  = S_FINAL; // Завершение строки
 
     // Операторы (обработка составных, напр. := )
@@ -175,7 +192,14 @@ Token Lexer::nextToken() {
 
     // Определяем финальный тип токена на основе "предпоследнего" состояния
     TokenType finalType = mapStateToTokenType(lastActiveState, buffer);
-    return Token(finalType, buffer, startLine, startCol);
+    Token result(finalType, buffer, startLine, startCol);
+
+    // Если это ошибка — сразу логируем
+    if (finalType == T_ERROR) {
+        logError(result);
+    }
+    
+    return result;
 }
 
 // ================= ОПРЕДЕЛЕНИЕ ТИПА =================
@@ -199,11 +223,58 @@ TokenType Lexer::mapStateToTokenType(State lastActiveState, const std::string& b
             return T_FLOAT;
         case S_STRING:
             return T_STRING;
+        // Состояния, которые обязаны быть ошибкой:
+        case S_DOT_ONLY: // Одинокая точка (.5)
+        case S_DOT_SEEN: // Число прервалось на точке (напр. "42.")
+            return T_ERROR;
+
         case S_OPERATOR:
         // Если комментарий не начался, '/' это оператор
         case S_COMMENT_START: 
             return T_OPERATOR;
         default:
             return T_ERROR;
+    }
+}
+
+void Lexer::logError(const Token& t) {
+    std::cerr << "\n[ОШИБКА ЛЕКСЕРА] Строка " << t.line << ", Столбец " << t.column << ": ";
+    
+    // Причина (Reason)
+    if (t.value == "\"") {
+        std::cerr << "Незавершенная строковая константа.";
+    } else if (t.value == ".") {
+        std::cerr << "Одиночная точка не является допустимым токеном. Ожидалась цифра до неё.";
+    } else if (t.value.find('.') != std::string::npos && t.value.back() == '.') {
+        std::cerr << "Неверный формат вещественного числа: '" << t.value << "'. После точки должны идти цифры.";
+    } else if (t.value[0] == '.') {
+         std::cerr << "Неверный формат вещественного числа: '" << t.value << "'. Перед точкой должна быть хотя бы одна цифра.";
+    } else if (t.value == ":") {
+        std::cerr << "Неожиданный символ ':'. Возможно, вы имели в виду ':='?";
+    } else {
+        std::cerr << "Неизвестная или некорректная лексема '" << t.value << "'.";
+    }
+    std::cerr << "\n";
+
+    // Печать самой строки 
+    printErrorLine(t.line, t.column);
+}
+
+void Lexer::printErrorLine(int lineNum, int colNum) {
+    std::stringstream ss(inputCode);
+    std::string lineText;
+    int currentLine = 1;
+    
+    // Ищем нужную строку
+    while (std::getline(ss, lineText) && currentLine < lineNum) {
+        currentLine++;
+    }
+
+    if (currentLine == lineNum) {
+        // Печатаем саму строку
+        std::cerr << "  " << lineNum << " | " << lineText << "\n";
+        
+        // Печатаем "указатель" (стрелочку) под ошибкой
+        std::cerr << "    | " << std::string(colNum - 1, ' ') << "^\n";
     }
 }
