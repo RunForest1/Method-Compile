@@ -1,25 +1,80 @@
-# 4. Семантические действия для генерации ОПС
+# 4. Семантические действия для генерации ОПС (Таблица генератора)
 
-Генерация обратной польской записи (ОПС) выполняется одновременно с синтаксическим анализом. Каждому правилу грамматики сопоставлены действия по наполнению массива ОПС и управлению магазином меток.
+В данной таблице каждому элементу правой части правила соответствует семантическое действие. Действия выполняются синхронно с работой LL(1)-анализатора.
 
-### 4.1. Управление потоком (Метки и Переходы)
-Для реализации ветвлений и циклов используются пять базовых семантических программ:
+### Обозначения действий:
+*   $\Box$ — пустое действие;
+*   $a$ — запись в ОПС адреса переменной (или ссылки на таблицу идентификаторов);
+*   $k$ — запись в ОПС константы;
+*   $1, 2, 3, 4, 5$ — семантические программы управления метками (P1–P5);
+*   $+$, $-$, $*$, $/$ — запись соответствующей бинарной арифметической операции;
+*   $=$ — запись операции сравнения (равно, не равно, меньше и т.д.);
+*   $-'$ — запись операции унарного минуса;
+*   $i, i2$ — операции индексации одномерного и двумерного массива;
+*   $:=$ — запись операции присваивания;
+*   $r, w$ — операции чтения и вывода.
 
-*   **P1 (Фиксация точки перехода по условию):** 
-    Генерирует в ОПС пустую ячейку для метки и команду `JF`. Индекс ячейки сохраняется в магазин меток. Вызывается после вычисления условия в `if` и `while`.
-*   **P2 (Обработка else):** 
-    Вызывается перед началом блока `else`. Генерирует в ОПС пустую ячейку для метки и команду `J` (безусловный переход в конец `if-then-else`). Заполняет ячейку из P1 текущим адресом (начало `else`). Индекс новой пустой ячейки помещается в магазин меток.
-*   **P3 (Закрытие ветвления):** 
-    Вызывается в конце `if`. Заполняет последнюю зарезервированную ячейку (из P1 или P2) текущим адресом ОПС.
-*   **P4 (Точка возврата цикла):** 
-    Вызывается перед вычислением условия `while`. Сохраняет текущий адрес ОПС в магазин меток как точку, куда нужно вернуться для повторной проверки условия.
-*   **P5 (Завершение цикла):** 
-    Вызывается после тела `while`. Извлекает из магазина меток адрес `JF` (из P1) и заполняет его адресом выхода. Извлекает адрес начала (из P4), записывает его в ОПС как операнд и добавляет команду `J`.
-
-### 4.2. Арифметические и логические операции
-*   При встрече `L_ID`, `L_INT`, `L_FLOAT`, `L_STRING` — соответствующий объект (ссылка или значение) немедленно записывается в ОПС.
-*   Операторы `+`, `-`, `*`, `/` записываются в ОПС после обработки их правых операндов (согласно правилам для `<ExpressionTail>` и `<TermTail>`).
-*   Унарный минус записывается как специальная операция `NEG` после своего операнда.
+| Нетерминал | Порождающее правило в нестрогой форме Грейбах | Семантические действия |
+|---|---|---|
+| `<Program>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';') <Program>` | a $\Box$ $\Box$ $\Box$ := $\Box$ $\Box$ |
+| `<Program>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger> <Program>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 $\Box$ |
+| `<Program>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger> <Program>` | 4 1 $\Box$ $\Box$ 5 $\Box$ |
+| `<Program>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';') <Program>` | $\Box$ $\Box$ a $\Box$ r $\Box$ $\Box$ |
+| `<Program>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';') <Program>` | $\Box$ $\Box$ $\Box$ w $\Box$ $\Box$ |
+| `<Program>` | `λ` | $\Box$ |
+| `<Program>` | `L_TERMINATOR` | $\Box$ |
+| `<Statement>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
+| `<Statement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 |
+| `<Statement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 1 $\Box$ $\Box$ 5 |
+| `<Statement>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ a $\Box$ r $\Box$ |
+| `<Statement>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ $\Box$ w $\Box$ |
+| `<Assignment>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
+| `<IfStatement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 |
+| `<ElsePart>` | `L_KEYWORD('else') <Statement>` | $\Box$ 2 |
+| `<ElsePart>` | `λ` | $\Box$ |
+| `<WhileStatement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 1 $\Box$ $\Box$ 5 |
+| `<ReadStatement>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ a $\Box$ r $\Box$ |
+| `<WriteStatement>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ $\Box$ w $\Box$ |
+| `<Condition>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ -' $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_ID <ArrayIndex> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | a $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_INT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | k $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_FLOAT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | k $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_STRING <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | k $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Expression>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ |
+| `<Expression>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ |
+| `<Expression>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ -' $\Box$ $\Box$ |
+| `<Expression>` | `L_ID <ArrayIndex> <TermTail> <ExpressionTail>` | a $\Box$ $\Box$ $\Box$ |
+| `<Expression>` | `L_INT <TermTail> <ExpressionTail>` | k $\Box$ $\Box$ |
+| `<Expression>` | `L_FLOAT <TermTail> <ExpressionTail>` | k $\Box$ $\Box$ |
+| `<Expression>` | `L_STRING <TermTail> <ExpressionTail>` | k $\Box$ $\Box$ |
+| `<ExpressionTail>` | `L_ADDITIVE_OPERATOR <Term> <ExpressionTail>` | $\Box$ $\Box$ + |
+| `<ExpressionTail>` | `λ` | $\Box$ |
+| `<Term>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ |
+| `<Term>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail>` | $\Box$ $\Box$ $\Box$ |
+| `<Term>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ -' $\Box$ |
+| `<Term>` | `L_ID <ArrayIndex> <TermTail>` | a $\Box$ $\Box$ |
+| `<Term>` | `L_INT <TermTail>` | k $\Box$ |
+| `<Term>` | `L_FLOAT <TermTail>` | k $\Box$ |
+| `<Term>` | `L_STRING <TermTail>` | k $\Box$ |
+| `<TermTail>` | `L_MULTIPLICATIVE_OPERATOR <Factor> <TermTail>` | $\Box$ $\Box$ * |
+| `<TermTail>` | `λ` | $\Box$ |
+| `<Factor>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')')` | $\Box$ $\Box$ $\Box$ |
+| `<Factor>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand>` | $\Box$ $\Box$ |
+| `<Factor>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger>` | $\Box$ $\Box$ -' |
+| `<Factor>` | `L_ID <ArrayIndex>` | a $\Box$ |
+| `<Factor>` | `L_INT` | k |
+| `<Factor>` | `L_FLOAT` | k |
+| `<Factor>` | `L_STRING` | k |
+| `<UnaryOperand>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')')` | $\Box$ $\Box$ $\Box$ |
+| `<UnaryOperand>` | `L_ID <ArrayIndex>` | a $\Box$ |
+| `<UnaryOperand>` | `L_INT` | k |
+| `<UnaryOperand>` | `L_FLOAT` | k |
+| `<ArrayIndex>` | `L_DELIMITER('[') <Expression> L_DELIMITER(']')` | $\Box$ $\Box$ i |
+| `<ArrayIndex>` | `L_DELIMITER('[') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(']')` | $\Box$ $\Box$ $\Box$ $\Box$ i2 |
+| `<ArrayIndex>` | `λ` | $\Box$ |
+| `<SemanticTrigger>` | `λ` | $\Box$ |
 
 ---
 
@@ -57,58 +112,3 @@
 2.  **CONST_VAL:** Непосредственное значение (целое, вещественное или строка).
 3.  **OPERATOR:** Код операции из таблицы в разделе 5.
 4.  **LABEL:** Целое число — индекс (адрес) элемента в массиве ОПС. Используется как операнд для команд `J` и `JF`.
-
-### Пример структуры данных (C++):
-```cpp
-enum class RpnElementType {
-    Operand,   // Константы, переменные
-    Operator,  // +, -, :=, JF, etc.
-    Label      // Индекс в массиве ОПС
-};
-
-struct RpnElement {
-    RpnElementType type;
-    std::string value; // Или union/variant для разных типов данных
-    int jumpAddr;      // Для меток
-};
-```
-
-### Принцип работы интерпретатора:
-Интерпретатор последовательно считывает элементы ОПС. Операнды и метки помещаются в стек данных. При встрече операции из стека извлекается необходимое число аргументов, выполняется действие, и результат (если есть) кладется обратно в стек. В случае команд перехода (`J`, `JF`) указатель текущей команды переставляется на адрес, указанный в операнде-метке.
-
----
-
-# 7. Таблица переходов LL(1) и генератора ОПС
-
-**Обозначения семантических действий:**
-*   $\Box$ — пустое действие;
-*   $a$ — запись в ОПС адреса переменной;
-*   $k$ — запись в ОПС константы;
-*   $+$, $-$, $*$, $/$ — запись бинарной операции;
-*   $-'$ — запись унарного минуса;
-*   $1, 2, 3, 4, 5$ — семантические программы управления метками (см. раздел 4.1);
-*   $i, i2$ — операции индексации одномерного и двумерного массивов;
-*   $r, w$ — операции ввода и вывода;
-*   $=$ — запись операции сравнения (аналогично для $\ne, <, >, \le, \ge$).
-
-| Нетерминал | L_ID | L_INT / L_FLOAT / L_STR | + / – | * / / | ( | ) | [ | ] | , | := | if / while / read / write | ; / ┴ |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **\<Program>** | `<Stat> <Prog>`<br>$\Box \Box$ | | | | | | | | | | `<Stat> <Prog>`<br>$\Box \Box$ | $\lambda$ / $L\_TERM$<br>$\Box$ |
-| **\<Statement>** | `<Assignment>`<br>$\Box$ | | | | | | | | | | `<IfStat>` / `<WhileStat>` / `<Read>` / `<Write>`<br>$\Box$ | |
-| **\<Assignment>** | $L\_ID <ArrIdx> := <Expr> Z ;$<br>$a \Box \Box \Box := \Box$ | | | | | | | | | | | |
-| **\<IfStatement>** | | | | | | | | | | | $if <Cond> Z_{P1} then <Stat> <Else> Z_{P3}$<br>$\Box \Box 1 \Box \Box \Box 3$ | |
-| **\<ElsePart>** | | | | | | | | | | | $else Z_{P2} <Stat>$<br>$\Box 2 \Box$ | $\lambda$<br>$\Box$ |
-| **\<WhileStatement>** | | | | | | | | | | | $while Z_{P4} <Cond> Z_{P1} do <Stat> Z_{P5}$<br>$\Box 4 \Box 1 \Box \Box 5$ | |
-| **\<Condition>** | `<Expr> CMP <Expr> Z$<br>$\Box \Box \Box =$ | `<Expr> CMP <Expr> Z$<br>$\Box \Box \Box =$ | | | `<Expr> CMP <Expr> Z$<br>$\Box \Box \Box =$ | | | | | | | |
-| **\<Expression>** | `<Term> <ExprTail>`<br>$\Box \Box$ | `<Term> <ExprTail>`<br>$\Box \Box$ | `<Term> <ExprTail>`<br>$\Box \Box$ | | `<Term> <ExprTail>`<br>$\Box \Box$ | | | | | | | |
-| **\<ExprTail>** | | | $+ <Term> <ExprTail>$<br>$\Box \Box +$ | | | $\lambda$<br>$\Box$ | | | | | | $\lambda$<br>$\Box$ |
-| **\<Term>** | `<Fact> <TermTail>`<br>$\Box \Box$ | `<Fact> <TermTail>`<br>$\Box \Box$ | `<Fact> <TermTail>`<br>$\Box \Box$ | | `<Fact> <TermTail>`<br>$\Box \Box$ | | | | | | | |
-| **\<TermTail>** | | | $\lambda$<br>$\Box$ | $* <Fact> <TermTail>$<br>$\Box \Box *$ | | $\lambda$<br>$\Box$ | | | | | | $\lambda$<br>$\Box$ |
-| **\<Factor>** | $L\_ID <ArrIdx>$<br>$a \Box$ | $Const$<br>$k$ | $+ <UOp>$<br>$\Box \Box$ / $- <UOp> Z$<br>$\Box \Box -'$ | | $( <Expr> )$<br>$\Box \Box \Box$ | | | | | | | |
-| **\<UnaryOperand>** | $L\_ID <ArrIdx>$<br>$a \Box$ | $Const$<br>$k$ | | | $( <Expr> )$<br>$\Box \Box \Box$ | | | | | | | |
-| **\<ArrayIndex>** | $\lambda$<br>$\Box$ | | $\lambda$<br>$\Box$ | $\lambda$<br>$\Box$ | $\lambda$<br>$\Box$ | | $[ <Expr> <IdxTail>$<br>$\Box \Box \Box$ | | | $\lambda$<br>$\Box$ | | |
-| **\<IdxTail>** | | | | | | | | $] Z_{i}$<br>$\Box i$ | $, <Expr> ] Z_{i2}$<br>$\Box \Box \Box i2$ | | | |
-| **\<ReadStatement>** | | | | | | | | | | | $read ( L\_ID <ArrIdx> ) ;$<br>$\Box \Box a \Box \Box r \Box$ | |
-| **\<WriteStatement>** | | | | | | | | | | | $write ( <Expr> ) ;$<br>$\Box \Box \Box \Box w \Box$ | |
-
-
