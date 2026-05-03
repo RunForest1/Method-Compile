@@ -3,20 +3,22 @@
 В данной грамматике терминалами являются лексемы, определенные в лексическом анализаторе.
 
 **Нетерминалы:**
-* `<Program>` — корень программы (последовательность операторов).
-* `<Statement>` — отдельный оператор.
-* `<Expression>` — арифметическое выражение (+, -).
-* `<ExpressionTail>` — хвост выражения для устранения левой рекурсии.
-* `<Term>` — слагаемое (*, /).
-* `<TermTail>` — хвост слагаемого.
-* `<Factor>` — элементарный множитель.
-* `<UnaryOperand>` — операнд после унарного знака (соответствует `G`).
-* `<Condition>` — логическое условие для `if` и `while`.
-* `<ComparisonPart>` — вторая часть операции сравнения.
-* `<ArrayIndex>` — индекс массива.
-* `<IndexTail>` — завершение индексации (различие между `[x]` и `[x, y]`).
-* `<ElsePart>` — необязательная ветвь `else`.
-* `<SemanticTrigger>` — нетерминал, всегда порождающий λ, служащий сигналом для выполнения семантического действия из магазина (соответствует `Z`).
+* `<Program>` — входная точка программы, последовательность операторов.
+* `<Statement>` — обобщенный оператор языка.
+* `<Assignment>` — оператор присваивания значения переменной или элементу массива.
+* `<IfStatement>` — условный оператор (полная и сокращенная формы).
+* `<ElsePart>` — ветка «иначе» условного оператора.
+* `<WhileStatement>` — цикл с предусловием.
+* `<ReadStatement>` — оператор ввода данных.
+* `<WriteStatement>` — оператор вывода данных.
+* `<Condition>` — логическое условие (сравнение двух выражений).
+* `<Expression>` — арифметическое выражение (операции +, -).
+* `<Term>` — слагаемое выражения (операции *, /).
+* `<Factor>` — элементарный множитель (число, переменная, выражение в скобках или унарная операция).
+* `<UnaryOperand>` — операнд, к которому применяется унарный знак (соответствует нетерминалу `G`).
+* `<ArrayIndex>` — индексный блок массива (поддержка одномерных и двумерных массивов).
+* `<IndexTail>` — хвост индексации массива.
+* `<SemanticTrigger>` — нетерминал, порождающий λ, служащий для вызова семантического действия в ОПС (соответствует `Z`).
 
 **Порождающие правила (стандартная форма):**
 
@@ -67,6 +69,8 @@
 
 # 3. КС-грамматика в нестрогой нормальной форме Грейбах
 
+Для LL(1)-анализа устранена левая рекурсия (введены хвосты `<ExpressionTail>` и `<TermTail>`) и выполнены подстановки для обеспечения терминального начала правил.
+
 ```
 <Program> -> L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';') <Program>
            | L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger> <Program>
@@ -82,43 +86,45 @@
              | L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';')
 
 <Expression> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail>
+              | L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail>
+              | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail>
               | L_ID <ArrayIndex> <TermTail> <ExpressionTail>
               | L_INT <TermTail> <ExpressionTail>
               | L_FLOAT <TermTail> <ExpressionTail>
               | L_STRING <TermTail> <ExpressionTail>
-              | L_ADDITIVE_OPERATOR <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail>
 
 <ExpressionTail> -> L_ADDITIVE_OPERATOR <Term> <ExpressionTail> | λ
 
 <Term> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail>
+        | L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail>
+        | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail>
         | L_ID <ArrayIndex> <TermTail>
         | L_INT <TermTail>
         | L_FLOAT <TermTail>
         | L_STRING <TermTail>
-        | L_ADDITIVE_OPERATOR <UnaryOperand> <SemanticTrigger> <TermTail>
 
 <TermTail> -> L_MULTIPLICATIVE_OPERATOR <Factor> <TermTail> | λ
 
 <Factor> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
+          | L_ADDITIVE_OPERATOR('+') <UnaryOperand>
+          | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger>
           | L_ID <ArrayIndex>
           | L_INT
           | L_FLOAT
           | L_STRING
-          | L_ADDITIVE_OPERATOR <UnaryOperand> <SemanticTrigger>
 
 <UnaryOperand> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
-               | L_ID <ArrayIndex>
-               | L_INT
-               | L_FLOAT
+                | L_ID <ArrayIndex>
+                | L_INT
+                | L_FLOAT
 
-<Condition> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail> <ComparisonPart>
-             | L_ID <ArrayIndex> <TermTail> <ExpressionTail> <ComparisonPart>
-             | L_INT <TermTail> <ExpressionTail> <ComparisonPart>
-             | L_FLOAT <TermTail> <ExpressionTail> <ComparisonPart>
-             | L_STRING <TermTail> <ExpressionTail> <ComparisonPart>
-             | L_ADDITIVE_OPERATOR <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail> <ComparisonPart>
-
-<ComparisonPart> -> L_COMPARISON_OPERATOR <Expression>
+<Condition> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_ID <ArrayIndex> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_INT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_FLOAT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_STRING <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
 
 <ArrayIndex> -> L_DELIMITER('[') <Expression> <IndexTail> | λ
 
@@ -131,54 +137,50 @@
 
 # 4. Семантические действия для генерации ОПС
 
+Семантические действия выполняются синхронно с разбором.
+
 | Нетерминал | Правило | Семантические действия |
 | :--- | :--- | :--- |
-| **Statement** | `L_ID ArrayIndex L_ASSIGN_OP Expression SemanticTrigger L_DELIM(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
-| | `L_KEY('if') Condition L_KEY('then') Statement ElsePart SemanticTrigger` | $\Box$ $\Box$ 1 $\Box$ $\Box$ 3 |
-| | `L_KEY('while') Condition L_KEY('do') Statement SemanticTrigger` | 4 $\Box$ 1 $\Box$ 5 |
-| | `L_KEY('read') L_DELIM('(') L_ID ArrayIndex L_DELIM(')') L_DELIM(';')` | $\Box$ $\Box$ a $\Box$ r $\Box$ |
-| | `L_KEY('write') L_DELIM('(') Expression L_DELIM(')') L_DELIM(';')` | $\Box$ $\Box$ $\Box$ w $\Box$ |
-| **Expression** | `L_ADD_OP UnaryOperand SemanticTrigger TermTail ExpressionTail` | $\Box$ $\Box$ -' $\Box$ $\Box$ |
+| **Assignment**| `L_ID ArrayIndex L_ASSIGN_OP Expression SemanticTrigger L_DELIM(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
+| **IfStatement**| `L_KEY('if') Condition L_KEY('then') Statement ElsePart SemanticTrigger` | $\Box$ $\Box$ 1 $\Box$ $\Box$ 3 |
+| **WhileStat.** | `L_KEY('while') Condition L_KEY('do') Statement SemanticTrigger` | 4 $\Box$ 1 $\Box$ 5 |
+| **ReadStat.** | `L_KEY('read') L_DELIM('(') L_ID ArrayIndex L_DELIM(')') L_DELIM(';')` | $\Box$ $\Box$ a $\Box$ r $\Box$ |
+| **WriteStat.** | `L_KEY('write') L_DELIM('(') Expression L_DELIM(')') L_DELIM(';')` | $\Box$ $\Box$ $\Box$ w $\Box$ |
+| **Condition** | `Expression L_COMP_OP Expression SemanticTrigger` | $\Box$ $\Box$ cmp $\Box$ |
+| **Factor** | `L_ADD_OP('-') UnaryOperand SemanticTrigger` | $\Box$ $\Box$ -' |
+| **Expression** | `Expression L_ADD_OP Term` | $\Box$ $\Box$ [+/-] |
+| **Term** | `Term L_MULT_OP Factor` | $\Box$ $\Box$ [*/] |
 | **ElsePart** | `L_KEY('else') Statement` | 2 $\Box$ |
-| **ComparisonPart**| `L_COMP_OP Expression` | $\Box$ cmp |
 | **IndexTail** | `L_DELIMITER(']')` | i |
 | | `L_DELIMITER(',') Expression L_DELIMITER(']')` | $\Box$ $\Box$ i2 |
+| **Sem.Trigger**| `λ` | (Срабатывает действие, заложенное в магазин) |
 
 # 5. Список операций ОПС
-* `+`, `-`, `*`, `/` — бинарные арифметические операции.
+
+* `+`, `-`, `*`, `/` — арифметические операции.
 * `-'` — унарный минус.
 * `==`, `!=`, `<`, `>`, `<=`, `>=` — операции сравнения (`cmp`).
 * `:=` — присваивание.
-* `j` — безусловный переход к элементу ОПС по адресу.
-* `jf` — переход по адресу, если значение на вершине стека ложно.
-* `i` — индексация одномерного массива.
-* `i2` — индексация двумерного массива.
-* `r` — чтение значения (в переменную).
-* `w` — вывод значения.
+* `j` — безусловный переход.
+* `jf` — переход по условию (false).
+* `i`, `i2` — индексация массивов.
+* `r` — чтение (read).
+* `w` — запись (write).
 
 # 6. Формат ОПС
 
-ОПС представляет собой линейный массив объектов (структур), каждый из которых содержит:
-1. **Тип элемента:** Операнд (адрес переменной или константа), Операция или Метка перехода.
-2. **Значение:** Конкретный код операции, значение числа/строки или индекс в массиве ОПС.
-
-Исполнение происходит с использованием стека: операнды кладутся в стек, операции извлекают их и кладут результат обратно.
+ОПС — это линейный массив структур, где каждый элемент имеет:
+1. **Тип:** Операнд (Адрес или Константа), Операция, Метка.
+2. **Значение:** Конкретный код или данные.
 
 # 7. Таблица переходов LL(1)-анализатора и генератора ОПС
 
-| Нетерминал | ID | Const | Add | Mult | Cmp | Assign | ( | ) | [ | ] | , | ; | if | then | else | while | do | read | write | ┴ |
+| Нетерминал | ID | Const | Add(+) | Add(-) | Mult | Cmp | Assign | ( | ) | [ | ] | , | ; | if | then | else | while | do | read | write | ┴ |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Program** | `Stat Progr` | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | `Stat Progr` | λ | λ | `Stat Progr` | λ | `Stat Progr` | `Stat Progr` | λ |
-| **Statement** | `ID ArrInd := Expr SemTr ;` <br> a $\Box$ $\Box$ $\Box$ := $\Box$ | | | | | | | | | | | | `if Cond then Stat Else SemTr` <br> $\Box$ $\Box$ 1 $\Box$ $\Box$ 3 | | | `while Cond do Stat SemTr` <br> 4 $\Box$ 1 $\Box$ 5 | | `read ( ID ArrInd ) ;` <br> $\Box$ $\Box$ a $\Box$ r $\Box$ | `write ( Expr ) ;` <br> $\Box$ $\Box$ $\Box$ w $\Box$ | |
-| **Expression** | `ID ArrInd TTail ETail` | `Const TTail ETail` | `Add UOper SemTr TTail ETail` <br> $\Box$ $\Box$ -' $\Box$ $\Box$ | | | | `( Expr ) TTail ETail` | | | | | | | | | | | | | |
-| **ExpressionTail**| λ | λ | `Add Term ETail` <br> $\Box$ $\Box$ [+/-] | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ |
-| **Term** | `ID ArrInd TTail` | `Const TTail` | `Add UOper SemTr TTail` | | | | `( Expr ) TTail` | | | | | | | | | | | | | |
-| **TermTail** | λ | λ | λ | `Mult Fact TTail` <br> $\Box$ $\Box$ [*/] | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ |
-| **Factor** | `ID ArrInd` | `Const` | `Add UOper SemTr` | | | | `( Expr )` | | | | | | | | | | | | | |
-| **UnaryOperand** | `ID ArrInd` | `Const` | | | | | `( Expr )` | | | | | | | | | | | | | |
-| **Condition** | `ID ArrInd TTail ETail CmpP` | `Const TTail ETail CmpP` | `Add UOper SemTr TTail ETail CmpP` | | | | `( Expr ) TTail ETail CmpP` | | | | | | | | | | | | | |
-| **ComparisonPart**| | | | | `Cmp Expr` <br> $\Box$ cmp | | | | | | | | | | | | | | | |
-| **ArrayIndex** | λ | λ | λ | λ | λ | λ | λ | λ | `[ Expr ITail` | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ |
-| **IndexTail** | | | | | | | | | | `]` <br> i | `, Expr ]` <br> $\Box$ $\Box$ i2 | | | | | | | | | |
-| **ElsePart** | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | `else Stat` <br> 2 $\Box$ | λ | λ | λ | λ | λ |
-| **SemanticTrigger**| λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ |
+| **Program** | `Stat Progr` | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | `Stat Progr` | λ | λ | `Stat Progr` | λ | `Stat Progr` | `Stat Progr` | λ |
+| **Statement** | `Assignment` | | | | | | | | | | | | | | | | | | `ReadStat` | `WriteStat` | |
+| **Assignment** | `ID ArrInd := Expr SemTr ;` <br> a $\Box$ $\Box$ $\Box$ := $\Box$ | | | | | | | | | | | | | | | | | | | | |
+| **Expression** | `ID ArrInd TTail ETail` | `Const TTail ETail` | `+ UOper TTail ETail` | `- UOper SemTr TTail ETail` <br> $\Box$ $\Box$ -' $\Box$ $\Box$ | | | | `( Expr ) TTail ETail` | | | | | | | | | | | | | |
+| **ExprTail** | λ | λ | `+ Term ETail` <br> $\Box$ $\Box$ + | `- Term ETail` <br> $\Box$ $\Box$ - | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ |
+| **Condition** | `ID ArrInd TTail ETail Cmp Expr SemTr` | `Const TTail ETail Cmp Expr SemTr` | `+ UOper TTail ETail Cmp Expr SemTr` | `- UOper SemTr TTail ETail Cmp Expr SemTr` | | | | `( Expr ) TTail ETail Cmp Expr SemTr` | | | | | | | | | | | | | |
+| **SemTrigger** | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ | λ |
