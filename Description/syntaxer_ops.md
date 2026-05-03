@@ -71,8 +71,9 @@
 | `<UnaryOperand>` | `L_ID <ArrayIndex>` | a $\Box$ |
 | `<UnaryOperand>` | `L_INT` | k |
 | `<UnaryOperand>` | `L_FLOAT` | k |
-| `<ArrayIndex>` | `L_DELIMITER('[') <Expression> L_DELIMITER(']')` | $\Box$ $\Box$ i |
-| `<ArrayIndex>` | `L_DELIMITER('[') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(']')` | $\Box$ $\Box$ $\Box$ $\Box$ i2 |
+| `<ArrayIndex>` | `L_DELIMITER('[') <Expression> <ArrayTail>` | $\Box$ $\Box$ $\Box$ |
+| `<ArrayTail>` | `L_DELIMITER(']')` | i |
+| `<ArrayTail>` | `L_DELIMITER(',') <Expression> L_DELIMITER(']')` | $\Box$ $\Box$ i2 |
 | `<ArrayIndex>` | `λ` | |
 | `<SemanticTrigger>` | `λ` | |
 
