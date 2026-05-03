@@ -22,7 +22,7 @@
 | `<Program>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';') <Program>` | $\Box$ $\Box$ a $\Box$ r $\Box$ $\Box$ |
 | `<Program>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';') <Program>` | $\Box$ $\Box$ $\Box$ w $\Box$ $\Box$ |
 | `<Program>` | `λ` |  |
-| `<Program>` | `L_TERMINATOR` | $\Box$ |
+| `<Program>` | `L_TERMINATOR` | |
 | `<Statement>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
 | `<Statement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 |
 | `<Statement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 1 $\Box$ $\Box$ 5 |
