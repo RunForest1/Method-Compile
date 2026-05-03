@@ -150,9 +150,8 @@
                 | L_INT
                 | L_FLOAT
 
-<ArrayIndex> -> L_DELIMITER('[') <Expression> L_DELIMITER(']') 
-              | L_DELIMITER('[') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(']') 
-              | λ
+<ArrayIndex> -> L_DELIMITER('[') <Expression> <ArrayTail>
+<ArrayTail> -> L_DELIMITER(']') | L_DELIMITER(',') <Expression> L_DELIMITER(']') | λ
 
 <SemanticTrigger> -> λ
 ```
@@ -229,9 +228,8 @@
                 | L_INT
                 | L_FLOAT
 
-<ArrayIndex> -> L_DELIMITER('[') <Expression> L_DELIMITER(']') 
-              | L_DELIMITER('[') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(']') 
-              | λ
+<ArrayIndex> -> L_DELIMITER('[') <Expression> <ArrayTail>
+<ArrayTail> -> L_DELIMITER(']') | L_DELIMITER(',') <Expression> L_DELIMITER(']') | λ
 
 <SemanticTrigger> -> λ
 
