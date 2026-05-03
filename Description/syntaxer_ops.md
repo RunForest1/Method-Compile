@@ -17,22 +17,22 @@
 | Нетерминал | Порождающее правило в нестрогой форме Грейбах | Семантические действия |
 |---|---|---|
 | `<Program>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';') <Program>` | a $\Box$ $\Box$ $\Box$ := $\Box$ $\Box$ |
-| `<Program>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger> <Program>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 $\Box$ |
-| `<Program>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger> <Program>` | 4 1 $\Box$ $\Box$ 5 $\Box$ |
+| `<Program>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger> <Program>` | $\Box$ $\Box$ 1 $\Box$ $\Box$ 3 $\Box$ |
+| `<Program>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger> <Program>` | 4 $\Box$ 1 $\Box$ 5 $\Box$ |
 | `<Program>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';') <Program>` | $\Box$ $\Box$ a $\Box$ r $\Box$ $\Box$ |
 | `<Program>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';') <Program>` | $\Box$ $\Box$ $\Box$ w $\Box$ $\Box$ |
 | `<Program>` | `λ` |  |
 | `<Program>` | `L_TERMINATOR` | |
 | `<Statement>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
-| `<Statement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 |
-| `<Statement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 1 $\Box$ $\Box$ 5 |
+| `<Statement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ $\Box$ 1  $\Box$ $\Box$ 3 |
+| `<Statement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 $\Box$ 1 $\Box$ 5 |
 | `<Statement>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ a $\Box$ r $\Box$ |
 | `<Statement>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ $\Box$ w $\Box$ |
 | `<Assignment>` | `L_ID <ArrayIndex> L_ASSIGNMENT_OPERATOR <Expression> <SemanticTrigger> L_DELIMITER(';')` | a $\Box$ $\Box$ $\Box$ := $\Box$ |
-| `<IfStatement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ 1 $\Box$ $\Box$ $\Box$ 3 |
-| `<ElsePart>` | `L_KEYWORD('else') <Statement>` | $\Box$ 2 |
+| `<IfStatement>` | `L_KEYWORD('if') <Condition> L_KEYWORD('then') <Statement> <ElsePart> <SemanticTrigger>` | $\Box$ $\Box$ 1 $\Box$ $\Box$ 3 |
+| `<ElsePart>` | `L_KEYWORD('else') <Statement>` | 2 $\Box$ |
 | `<ElsePart>` | `λ` |  |
-| `<WhileStatement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 1 $\Box$ $\Box$ 5 |
+| `<WhileStatement>` | `L_KEYWORD('while') <Condition> L_KEYWORD('do') <Statement> <SemanticTrigger>` | 4 $\Box$ 1  $\Box$ 5 |
 | `<ReadStatement>` | `L_KEYWORD('read') L_DELIMITER('(') L_ID <ArrayIndex> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ a $\Box$ r $\Box$ |
 | `<WriteStatement>` | `L_KEYWORD('write') L_DELIMITER('(') <Expression> L_DELIMITER(')') L_DELIMITER(';')` | $\Box$ $\Box$ $\Box$ w $\Box$ |
 | `<Condition>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
