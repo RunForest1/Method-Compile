@@ -1,359 +1,385 @@
 #include "Parser.h"
 #include <stdexcept>
-#include <iostream>
 
 Parser::Parser(Lexer &lexer) : lexer(lexer)
 {
-    initSemanticTable();
-    initMatrix();
+    initSemanticTable(); // Инициализация таблицы действий
+    initMatrix();        // Инициализация матрицы переходов
 }
 
+/**
+ * Вспомогательный метод для разделения общих типов лексем (Keyword, Delimiter)
+ * на уникальные терминалы для матрицы переходов.
+ */
 int Parser::getExtendedType(const Lexem &l)
 {
     if (l.type == LexemType::L_KEYWORD)
     {
-        if (l.value == "if") return 1001;
-        if (l.value == "then") return 1002;
-        if (l.value == "else") return 1003;
-        if (l.value == "while") return 1004;
-        if (l.value == "do") return 1005;
-        if (l.value == "read") return 1006;
-        if (l.value == "write") return 1007;
+        if (l.value == "if")
+            return 1001;
+        if (l.value == "then")
+            return 1002;
+        if (l.value == "else")
+            return 1003;
+        if (l.value == "while")
+            return 1004;
+        if (l.value == "do")
+            return 1005;
+        if (l.value == "read")
+            return 1006;
+        if (l.value == "write")
+            return 1007;
     }
     if (l.type == LexemType::L_DELIMITER)
     {
-        if (l.value == "(") return 2001;
-        if (l.value == ")") return 2002;
-        if (l.value == "[") return 2003;
-        if (l.value == "]") return 2004;
-        if (l.value == ";") return 2005;
-        if (l.value == ",") return 2006;
+        if (l.value == "(")
+            return 2001;
+        if (l.value == ")")
+            return 2002;
+        if (l.value == "[")
+            return 2003;
+        if (l.value == "]")
+            return 2004;
+        if (l.value == ";")
+            return 2005;
+        if (l.value == ",")
+            return 2006;
     }
-    return static_cast<int>(l.type);
+    return (int)l.type;
 }
 
 void Parser::initMatrix()
 {
-    auto ID = static_cast<LexemType>(LexemType::L_ID);
-    auto INT = static_cast<LexemType>(LexemType::L_INT);
-    auto FLOAT = static_cast<LexemType>(LexemType::L_FLOAT);
-    auto STRING = static_cast<LexemType>(LexemType::L_STRING);
-    auto ASSIGN = static_cast<LexemType>(LexemType::L_ASSIGNMENT_OPERATOR);
-    auto ADD_OP = static_cast<LexemType>(LexemType::L_ADDITIVE_OPERATOR);
-    auto MULT_OP = static_cast<LexemType>(LexemType::L_MULTIPLICATIVE_OPERATOR);
-    auto COMP_OP = static_cast<LexemType>(LexemType::L_COMPARISON_OPERATOR);
-    auto TERM = static_cast<LexemType>(LexemType::L_TERMINATOR);
-    
-    auto IF = static_cast<LexemType>(1001);
-    auto THEN = static_cast<LexemType>(1002);
-    auto ELSE = static_cast<LexemType>(1003);
-    auto WHILE = static_cast<LexemType>(1004);
-    auto DO = static_cast<LexemType>(1005);
-    auto READ = static_cast<LexemType>(1006);
-    auto WRITE = static_cast<LexemType>(1007);
-    auto LPAR = static_cast<LexemType>(2001);
-    auto RPAR = static_cast<LexemType>(2002);
-    auto LBRACK = static_cast<LexemType>(2003);
-    auto RBRACK = static_cast<LexemType>(2004);
-    auto SEMI = static_cast<LexemType>(2005);
-    auto COMMA = static_cast<LexemType>(2006);
+    // Сокращения для терминалов
+    auto ID = (LexemType)LexemType::L_ID;
+    auto INT = (LexemType)LexemType::L_INT;
+    auto FLOAT = (LexemType)LexemType::L_FLOAT;
+    auto STRING = (LexemType)LexemType::L_STRING;
+    auto ASSIGN = (LexemType)LexemType::L_ASSIGNMENT_OPERATOR;
+    auto ADD_OP = (LexemType)LexemType::L_ADDITIVE_OPERATOR;
+    auto MULT_OP = (LexemType)LexemType::L_MULTIPLICATIVE_OPERATOR;
+    auto COMP_OP = (LexemType)LexemType::L_COMPARISON_OPERATOR;
+    auto TERM = (LexemType)LexemType::L_TERMINATOR;
 
-    // --- Program ---
+    // Виртуальные типы (согласовано с getExtendedType)
+    auto IF = (LexemType)1001;
+    auto THEN = (LexemType)1002;
+    auto ELSE = (LexemType)1003;
+    auto WHILE = (LexemType)1004;
+    auto DO = (LexemType)1005;
+    auto READ = (LexemType)1006;
+    auto WRITE = (LexemType)1007;
+    auto LPAR = (LexemType)2001;
+    auto RPAR = (LexemType)2002;
+    auto LBRACK = (LexemType)2003;
+    auto RBRACK = (LexemType)2004;
+    auto SEMI = (LexemType)2005;
+    auto COMMA = (LexemType)2006;
+
+    // --- 1. Program ---
+    // Program -> Statement Program | lambda
+    // Если видим начало оператора, разворачиваем Statement, затем рекурсивно Program
     for (auto t : {ID, IF, WHILE, READ, WRITE})
     {
         M[NonTerm::Program][t] = {
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Statement)}, 
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Program)}    
-        };
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Statement},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Program}};
     }
-    M[NonTerm::Program][TERM] = {}; 
-    M[NonTerm::Program][ELSE] = {}; 
+    // Lambda переходы для Program (конец ввода или конец блока else)
+    M[NonTerm::Program][TERM] = {};
+    M[NonTerm::Program][ELSE] = {};
 
-    // --- Statement ---
-    
-    // Write: write ( Expression ) ;
+    // --- 2. Statement ---
     M[NonTerm::Statement][WRITE] = {
-        {SymbolType::TERMINAL, static_cast<int>(WRITE)},
-        {SymbolType::TERMINAL, static_cast<int>(LPAR)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-        {SymbolType::SEMANTIC_ACTION, "w"}, 
-        {SymbolType::TERMINAL, static_cast<int>(RPAR)},
-        {SymbolType::TERMINAL, static_cast<int>(SEMI)}
-    };
+        {SymbolType::TERMINAL, (int)WRITE},
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::SEMANTIC_ACTION, "w"}, // Выполнится после Expression
+        {SymbolType::TERMINAL, (int)RPAR},
+        {SymbolType::TERMINAL, (int)SEMI}};
 
-    // Read: read ( ID ArrayIndex ) ;
     M[NonTerm::Statement][READ] = {
-        {SymbolType::TERMINAL, static_cast<int>(READ)},
-        {SymbolType::TERMINAL, static_cast<int>(LPAR)},
-        {SymbolType::TERMINAL, static_cast<int>(ID)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ArrayIndex)},
-        {SymbolType::SEMANTIC_ACTION, "a"}, 
-        {SymbolType::TERMINAL, static_cast<int>(RPAR)},
-        {SymbolType::SEMANTIC_ACTION, "r"}, 
-        {SymbolType::TERMINAL, static_cast<int>(SEMI)}
-    };
+        {SymbolType::TERMINAL, (int)READ},
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
+        {SymbolType::SEMANTIC_ACTION, "a"}, // Адрес переменной
+        {SymbolType::TERMINAL, (int)RPAR},
+        {SymbolType::SEMANTIC_ACTION, "r"}, // Операция чтения
+        {SymbolType::TERMINAL, (int)SEMI}};
 
-    // If: if Condition then Statement ElsePart SemanticTrigger
     M[NonTerm::Statement][IF] = {
-        {SymbolType::TERMINAL, static_cast<int>(IF)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Condition)},
-        {SymbolType::SEMANTIC_ACTION, "1"}, // P1: JF
-        {SymbolType::TERMINAL, static_cast<int>(THEN)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Statement)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ElsePart)},
-        {SymbolType::SEMANTIC_ACTION, "3"}  // P3: Patch JF
+        {SymbolType::TERMINAL, (int)IF},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Condition},
+        {SymbolType::SEMANTIC_ACTION, "1"}, // P1: Генерация JF
+        {SymbolType::TERMINAL, (int)THEN},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Statement},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ElsePart},
+        {SymbolType::SEMANTIC_ACTION, "3"} // P3: Прошивка адреса для JF (и J из else если был)
     };
 
-    // While: while Condition do Statement SemanticTrigger
     M[NonTerm::Statement][WHILE] = {
-        {SymbolType::SEMANTIC_ACTION, "4"}, // P4: Start Loop Label
-        {SymbolType::TERMINAL, static_cast<int>(WHILE)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Condition)},
-        {SymbolType::SEMANTIC_ACTION, "1"}, // P1: JF (Exit)
-        {SymbolType::TERMINAL, static_cast<int>(DO)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Statement)},
-        {SymbolType::SEMANTIC_ACTION, "5"}  // P5: Jump to Start
+        {SymbolType::SEMANTIC_ACTION, "4"}, // P4: Запомнить начало цикла
+        {SymbolType::TERMINAL, (int)WHILE},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Condition},
+        {SymbolType::SEMANTIC_ACTION, "1"}, // P1: Генерация JF (выход из цикла)
+        {SymbolType::TERMINAL, (int)DO},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Statement},
+        {SymbolType::SEMANTIC_ACTION, "5"} // P5: Прошивка перехода назад на начало
     };
 
-    // Assignment: ID ArrayIndex := Expression ;
     M[NonTerm::Statement][ID] = {
-        {SymbolType::TERMINAL, static_cast<int>(ID)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ArrayIndex)},
-        {SymbolType::SEMANTIC_ACTION, "a"}, 
-        {SymbolType::TERMINAL, static_cast<int>(ASSIGN)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-        {SymbolType::SEMANTIC_ACTION, ":="}, 
-        {SymbolType::TERMINAL, static_cast<int>(SEMI)}
-    };
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
+        {SymbolType::SEMANTIC_ACTION, "a"}, // Адрес левой части
+        {SymbolType::TERMINAL, (int)ASSIGN},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::SEMANTIC_ACTION, ":="}, // Оператор присваивания
+        {SymbolType::TERMINAL, (int)SEMI}};
 
-    // --- ElsePart ---
+    // --- 3. ElsePart ---
     M[NonTerm::ElsePart][ELSE] = {
-        {SymbolType::TERMINAL, static_cast<int>(ELSE)},
-        {SymbolType::SEMANTIC_ACTION, "2"}, // P2: Jump over else
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Statement)}
-    };
-    for (auto t : {SEMI, ELSE, TERM, RPAR}) 
+        {SymbolType::TERMINAL, (int)ELSE},
+        {SymbolType::SEMANTIC_ACTION, "2"}, // P2: Генерация J (переход через else)
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}};
+    // Lambda
+    for (auto t : {SEMI, ELSE, TERM, RPAR}) // Добавил RPAR на всякий случай, если внутри скобок
     {
         M[NonTerm::ElsePart][t] = {};
     }
 
-    // --- Condition ---
-    // Condition -> Expression CompOp Expression SemanticTrigger
-    auto condStarters = {ID, INT, FLOAT, STRING, LPAR, ADD_OP};
-    for (auto t : condStarters)
-    {
-        M[NonTerm::Condition][t] = {
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-            {SymbolType::TERMINAL, static_cast<int>(COMP_OP)},
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-            {SymbolType::SEMANTIC_ACTION, "op_comp"} // Запись оператора сравнения
-        };
-    }
+    // --- 4. Condition ---
+    M[NonTerm::Condition][ID] =
+        M[NonTerm::Condition][INT] =
+            M[NonTerm::Condition][LPAR] = {
+                {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+                {SymbolType::TERMINAL, (int)COMP_OP},
+                {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+                {SymbolType::SEMANTIC_ACTION, "="} // Запись оператора сравнения
+            };
 
-    // --- Expression & Term ---
-    for (auto t : condStarters)
+    // --- 5. Expression & Term (Eliminated Left Recursion) ---
+    for (auto t : {ID, INT, FLOAT, STRING, LPAR, ADD_OP}) // ADD_OP для унарного минуса/плюса в Factor
     {
         M[NonTerm::Expression][t] = {
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Term)},
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ExpressionTail)}
-        };
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
     }
 
+    // ExpressionTail -> + Term ExpressionTail | - Term ExpressionTail | lambda
     M[NonTerm::ExpressionTail][ADD_OP] = {
-        {SymbolType::TERMINAL, static_cast<int>(ADD_OP)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Term)},
-        {SymbolType::SEMANTIC_ACTION, "op_add_sub"}, 
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ExpressionTail)}
-    };
+        {SymbolType::TERMINAL, (int)ADD_OP},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
+        {SymbolType::SEMANTIC_ACTION, "+"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
+
+    // Lambda for ExpressionTail
     for (auto t : {SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
         M[NonTerm::ExpressionTail][t] = {};
 
-    for (auto t : condStarters)
+    // Term -> Factor TermTail
+    for (auto t : {ID, INT, FLOAT, STRING, LPAR, ADD_OP})
     {
         M[NonTerm::Term][t] = {
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Factor)},
-            {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::TermTail)}
-        };
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
     }
 
+    // TermTail -> * Factor TermTail | / Factor TermTail | lambda
     M[NonTerm::TermTail][MULT_OP] = {
-        {SymbolType::TERMINAL, static_cast<int>(MULT_OP)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Factor)},
-        {SymbolType::SEMANTIC_ACTION, "op_mul_div"}, 
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::TermTail)}
-    };
+        {SymbolType::TERMINAL, (int)MULT_OP},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
+        {SymbolType::SEMANTIC_ACTION, "mult_op"}, // Аналогично add_op, будет использовать prevLexem
+        {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
+    // Lambda for TermTail
     for (auto t : {ADD_OP, SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
         M[NonTerm::TermTail][t] = {};
 
-    // --- Factor ---
+    // --- 6. Factor ---
     M[NonTerm::Factor][LPAR] = {
-        {SymbolType::TERMINAL, static_cast<int>(LPAR)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-        {SymbolType::TERMINAL, static_cast<int>(RPAR)}
-    };
-    
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)RPAR}};
+
+    // Factor -> + UnaryOperand | - UnaryOperand
     M[NonTerm::Factor][ADD_OP] = {
-        {SymbolType::TERMINAL, static_cast<int>(ADD_OP)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::UnaryOperand)},
-        {SymbolType::SEMANTIC_ACTION, "unary_op"} 
+        {SymbolType::TERMINAL, (int)ADD_OP},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::UnaryOperand},
+        {SymbolType::SEMANTIC_ACTION, "unary_op"} // Действие определит знак через prevLexem
     };
 
+    // Factor -> ID ArrayIndex
     M[NonTerm::Factor][ID] = {
-        {SymbolType::TERMINAL, static_cast<int>(ID)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ArrayIndex)},
-        {SymbolType::SEMANTIC_ACTION, "a"}
-    };
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
+        {SymbolType::SEMANTIC_ACTION, "a"}};
 
+    // Factor -> INT | FLOAT | STRING
     M[NonTerm::Factor][INT] = {
-        {SymbolType::TERMINAL, static_cast<int>(INT)},
-        {SymbolType::SEMANTIC_ACTION, "k"}
-    };
+        {SymbolType::TERMINAL, (int)INT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
     M[NonTerm::Factor][FLOAT] = {
-        {SymbolType::TERMINAL, static_cast<int>(FLOAT)},
-        {SymbolType::SEMANTIC_ACTION, "k"}
-    };
+        {SymbolType::TERMINAL, (int)FLOAT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
     M[NonTerm::Factor][STRING] = {
-        {SymbolType::TERMINAL, static_cast<int>(STRING)},
-        {SymbolType::SEMANTIC_ACTION, "k"}
-    };
+        {SymbolType::TERMINAL, (int)STRING},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
 
-    // --- UnaryOperand ---
+    // --- 7. UnaryOperand ---
     M[NonTerm::UnaryOperand][LPAR] = {
-        {SymbolType::TERMINAL, static_cast<int>(LPAR)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-        {SymbolType::TERMINAL, static_cast<int>(RPAR)}
-    };
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)RPAR}};
     M[NonTerm::UnaryOperand][ID] = {
-        {SymbolType::TERMINAL, static_cast<int>(ID)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ArrayIndex)},
-        {SymbolType::SEMANTIC_ACTION, "a"}
-    };
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
+        {SymbolType::SEMANTIC_ACTION, "a"}};
     M[NonTerm::UnaryOperand][INT] = {
-        {SymbolType::TERMINAL, static_cast<int>(INT)},
-        {SymbolType::SEMANTIC_ACTION, "k"}
-    };
+        {SymbolType::TERMINAL, (int)INT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
     M[NonTerm::UnaryOperand][FLOAT] = {
-        {SymbolType::TERMINAL, static_cast<int>(FLOAT)},
-        {SymbolType::SEMANTIC_ACTION, "k"}
-    };
+        {SymbolType::TERMINAL, (int)FLOAT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
 
-    // --- ArrayIndex & ArrayTail ---
+    // --- 8. ArrayIndex & ArrayTail ---
     M[NonTerm::ArrayIndex][LBRACK] = {
-        {SymbolType::TERMINAL, static_cast<int>(LBRACK)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::ArrayTail)}
-    };
+        {SymbolType::TERMINAL, (int)LBRACK},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayTail}};
+    // Lambda for ArrayIndex
     for (auto t : {ASSIGN, SEMI, ADD_OP, MULT_OP, COMP_OP, RPAR, COMMA, THEN, DO, ELSE, RBRACK})
     {
         M[NonTerm::ArrayIndex][t] = {};
     }
 
+    // ArrayTail -> ] | , Expression ]
     M[NonTerm::ArrayTail][RBRACK] = {
-        {SymbolType::TERMINAL, static_cast<int>(RBRACK)},
-        {SymbolType::SEMANTIC_ACTION, "i"} 
+        {SymbolType::TERMINAL, (int)RBRACK},
+        {SymbolType::SEMANTIC_ACTION, "i"} // INDEX1
     };
     M[NonTerm::ArrayTail][COMMA] = {
-        {SymbolType::TERMINAL, static_cast<int>(COMMA)},
-        {SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Expression)},
-        {SymbolType::TERMINAL, static_cast<int>(RBRACK)},
-        {SymbolType::SEMANTIC_ACTION, "i2"} 
+        {SymbolType::TERMINAL, (int)COMMA},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)RBRACK},
+        {SymbolType::SEMANTIC_ACTION, "i2"} // INDEX2
     };
 
-    // --- SemanticTrigger ---
+    // --- 9. SemanticTrigger ---
     for (auto t : {SEMI, RPAR, RBRACK, COMMA, THEN, DO, ELSE, TERM})
     {
         M[NonTerm::SemanticTrigger][t] = {};
     }
 }
-
 void Parser::initSemanticTable()
 {
-    // Арифметика и сравнения используют prevLexem, так как действие вызывается сразу после чтения оператора
-    semanticActions["op_add_sub"] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); 
-    };
-    semanticActions["op_mul_div"] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); 
-    };
-    semanticActions["op_comp"] = [this]() {
-        rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); 
-    };
-    
-    semanticActions["unary_op"] = [this]() { 
-        if (prevLexem.value == "-") {
-            rpn.push_back({RpnElementType::OPERATOR, "NEG"}); 
+    // Бинарные операции
+    semanticActions["+"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    semanticActions["-"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    semanticActions["*"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    semanticActions["/"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+
+    // Универсальные действия для операторов, зависящих от контекста (prevLexem)
+    semanticActions["add_op"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    semanticActions["mult_op"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    semanticActions["unary_op"] = [this]()
+    {
+        if (prevLexem.value == "-")
+        {
+            rpn.push_back({RpnElementType::OPERATOR, "NEG"});
         }
+        // Если "+", то ничего не делаем или игнорируем
     };
 
-    semanticActions["a"] = [this]() { 
-        rpn.push_back({RpnElementType::ADDR_VAR, prevLexem.value}); 
-    };
-    semanticActions["k"] = [this]() { 
-        rpn.push_back({RpnElementType::CONST_VAL, prevLexem.value}); 
-    };
-    
-    semanticActions[":="] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, ":="}); 
-    };
-    
-    semanticActions["r"] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, "READ"}); 
-    };
-    semanticActions["w"] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, "WRITE"}); 
-    };
-    
-    semanticActions["i"] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, "INDEX1"}); 
-    };
-    semanticActions["i2"] = [this]() { 
-        rpn.push_back({RpnElementType::OPERATOR, "INDEX2"}); 
+    // Operand actions
+    semanticActions["a"] = [this]()
+    { rpn.push_back({RpnElementType::ADDR_VAR, prevLexem.value}); };
+    semanticActions["k"] = [this]()
+    { rpn.push_back({RpnElementType::CONST_VAL, prevLexem.value}); };
+
+    // Assignment
+    semanticActions[":="] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, ":="}); };
+
+    // IO
+    semanticActions["r"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "READ"}); };
+    semanticActions["w"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "WRITE"}); };
+
+    // Arrays
+    semanticActions["i"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "INDEX1"}); };
+    semanticActions["i2"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "INDEX2"}); };
+
+    // Comparison
+    semanticActions["="] = [this]()
+    {
+        rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); // ==, !=, <, >, etc.
     };
 
-    // Метки P1-P5
-    semanticActions["1"] = [this]() {
+    // Label Programs P1-P5
+    semanticActions["1"] = [this]()
+    {
         labelStack.push(rpn.size());
-        rpn.push_back({RpnElementType::LABEL, ""}); 
+        rpn.push_back({RpnElementType::LABEL, ""}); // Placeholder
         rpn.push_back({RpnElementType::OPERATOR, "JF"});
     };
-    
-    semanticActions["2"] = [this]() {
-        if (labelStack.empty()) {
+
+    semanticActions["2"] = [this]()
+    {
+        if (labelStack.empty())
+        {
             throw std::runtime_error("Семантическая ошибка: стек меток пуст при выполнении действия '2' (Else)");
         }
         int prevLabel = labelStack.top();
         labelStack.pop();
-        rpn[prevLabel].value = std::to_string(rpn.size() + 2); 
-        
-        labelStack.push(rpn.size()); 
-        rpn.push_back({RpnElementType::LABEL, ""}); 
+        // Прошиваем предыдущую метку (адрес следующего элемента после J)
+        rpn[prevLabel].value = std::to_string(rpn.size() + 2);
+
+        labelStack.push(rpn.size());                // Сохраняем позицию для нового J
+        rpn.push_back({RpnElementType::LABEL, ""}); // Placeholder
         rpn.push_back({RpnElementType::OPERATOR, "J"});
     };
-    
-    semanticActions["3"] = [this]() {
-        if (labelStack.empty()) {
+
+    semanticActions["3"] = [this]()
+    {
+        if (labelStack.empty())
+        {
             throw std::runtime_error("Семантическая ошибка: стек меток пуст при выполнении действия '3' (End If)");
         }
         int label = labelStack.top();
         labelStack.pop();
+        // Прошиваем метку (адрес текущего элемента)
         rpn[label].value = std::to_string(rpn.size());
     };
-    
-    semanticActions["4"] = [this]() { 
-        labelStack.push(rpn.size()); 
+
+    semanticActions["4"] = [this]()
+    {
+        labelStack.push(rpn.size());
     };
-    
-    semanticActions["5"] = [this]() {
-        if (labelStack.size() < 2) { 
+
+    semanticActions["5"] = [this]()
+    {
+        if (labelStack.size() < 2)
+        {
             throw std::runtime_error("Семантическая ошибка: недостаточно меток в стеке для действия '5' (End While)");
         }
-        int exitLabel = labelStack.top(); 
+        int exitLabel = labelStack.top(); // Метка для выхода из цикла (из P1)
         labelStack.pop();
-        int startLoop = labelStack.top(); 
+        int startLoop = labelStack.top(); // Метка начала цикла (из P4)
         labelStack.pop();
-        
+
+        // Прошиваем выход: JF должен вести на элемент после J
         rpn[exitLabel].value = std::to_string(rpn.size() + 2);
-        
+
+        // Генерируем переход на начало
         rpn.push_back({RpnElementType::LABEL, std::to_string(startLoop)});
         rpn.push_back({RpnElementType::OPERATOR, "J"});
     };
@@ -361,9 +387,9 @@ void Parser::initSemanticTable()
 
 std::vector<RpnElement> Parser::parse()
 {
-    parseStack.push({SymbolType::NON_TERMINAL, static_cast<int>(NonTerm::Program)});
+    parseStack.push({SymbolType::NON_TERMINAL, (int)NonTerm::Program});
     currentLexem = lexer.getNextLexem();
-    
+
     while (!parseStack.empty())
     {
         StackSymbol top = parseStack.top();
@@ -373,7 +399,7 @@ std::vector<RpnElement> Parser::parse()
         {
             int expectedType = top.id;
             int actualType = getExtendedType(currentLexem);
-            
+
             if (actualType == expectedType)
             {
                 prevLexem = currentLexem;
@@ -392,7 +418,7 @@ std::vector<RpnElement> Parser::parse()
         }
         else if (top.type == SymbolType::NON_TERMINAL)
         {
-            pushProduction(static_cast<NonTerm>(top.id), currentLexem.type);
+            pushProduction((NonTerm)top.id, currentLexem.type);
         }
     }
     return rpn;
@@ -413,10 +439,11 @@ void Parser::executeAction(const std::string &action)
 void Parser::pushProduction(NonTerm nt, LexemType lt)
 {
     int extType = getExtendedType(currentLexem);
-    
-    if (M.count(nt) && M[nt].count(static_cast<LexemType>(extType)))
+
+    // Проверка наличия правила
+    if (M.count(nt) && M[nt].count((LexemType)extType))
     {
-        const Production &prod = M[nt][static_cast<LexemType>(extType)];
+        const Production &prod = M[nt][(LexemType)extType];
         for (auto it = prod.rbegin(); it != prod.rend(); ++it)
         {
             parseStack.push(*it);
@@ -424,13 +451,17 @@ void Parser::pushProduction(NonTerm nt, LexemType lt)
     }
     else
     {
-        if (M.count(nt) && M[nt].count(static_cast<LexemType>(extType)) && M[nt][static_cast<LexemType>(extType)].empty())
+        // Обработка ошибок или lambda, если правило пустое
+        if (M.count(nt) && M[nt].count((LexemType)extType) && M[nt][(LexemType)extType].empty())
         {
-             return;
+            // Lambda transition, do nothing
+            return;
         }
 
-        std::string msg = "Ошибка матрицы разбора: нет правила для нетерминала " + std::to_string(static_cast<int>(nt)) +
-                          " с текущей лексемой '" + currentLexem.value + "' (тип " + std::to_string(extType) + ")";
-        throw std::runtime_error(msg);
+        if (!(nt == NonTerm::Program && (lt == LexemType::L_TERMINATOR || lt == LexemType::L_ERROR)))
+        {
+            throw std::runtime_error("Ошибка матрицы разбора: нет правила для нетерминала " + std::to_string(static_cast<int>(nt)) +
+                                     " с текущей лексемой '" + currentLexem.value + "' (тип " + std::to_string(extType) + ")");
+        }
     }
 }
