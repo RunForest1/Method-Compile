@@ -1,37 +1,108 @@
 #include <iostream>
+#include <vector>
 #include <iomanip>
+#include <sstream>
 #include "Lexer.h"
 #include "Parser.h"
 
-void printRpnTable(const std::vector<RpnElement>& rpn) {
-    std::cout << std::left << std::setw(5) << "idx" << std::setw(10) << "Type" << "Value" << std::endl;
-    for(size_t i=0; i<rpn.size(); ++i) {
-        std::cout << std::setw(5) << i << std::setw(10) << (int)rpn[i].type << rpn[i].value << std::endl;
+/**
+ * Вспомогательная функция для вывода ОПЗ в виде строки.
+ */
+void printRpnAsString(const std::vector<RpnElement> &rpn)
+{
+    std::ostringstream oss;
+    for (size_t i = 0; i < rpn.size(); ++i)
+    {
+        if (i > 0)
+            oss << " ";
+
+        switch (rpn[i].type)
+        {
+        case RpnElementType::ADDR_VAR:
+            oss << "ADDR(" << rpn[i].value << ")";
+            break;
+        case RpnElementType::CONST_VAL:
+            oss << "CONST(" << rpn[i].value << ")";
+            break;
+        case RpnElementType::OPERATOR:
+            oss << "OP(" << rpn[i].value << ")";
+            break;
+        case RpnElementType::LABEL:
+            oss << "LBL(" << rpn[i].value << ")";
+            break;
+        }
     }
+    std::cout << "ОПЗ: " << oss.str() << std::endl;
 }
 
-void test(const std::string& name, const std::string& code) {
-    std::cout << "--- TEST: " << name << " ---\nCode: " << code << std::endl;
-    try {
-        Lexer lexer(code);
+/**
+ * Запуск теста: лексический анализ -> синтаксический анализ -> генерация ОПЗ.
+ */
+void runParserTest(const std::string &testName, const std::string &source)
+{
+    std::cout << "\n=== ПАРСЕР ТЕСТ: " << testName << " ===" << std::endl;
+    std::cout << "ИСХОДНЫЙ КОД:\n"
+              << source << "\n"
+              << std::endl;
+
+    try
+    {
+        Lexer lexer(source);
         Parser parser(lexer);
-        auto rpn = parser.parse();
-        printRpnTable(rpn);
-        std::cout << "Result: OK\n" << std::endl;
-    } catch (const std::exception& e) {
-        std::cout << "Result: ERROR -> " << e.what() << "\n" << std::endl;
+        // Основной цикл разбора
+        std::vector<RpnElement> rpn = parser.parse();
+
+        std::cout << "Результат: УСПЕШНО" << std::endl;
+        printRpnAsString(rpn);
     }
+    catch (const std::exception &e)
+    {
+        std::cout << "Результат: ОШИБКА -> " << e.what() << std::endl;
+    }
+
+    std::cout << std::string(50, '=') << std::endl;
 }
 
-int main() {
-    // Тест 1: Последовательность операторов (Program)[cite: 9]
-    test("Sequence", "read(a); b := a + 1; write(b);");
+int main()
+{
+    // 1. Базовая арифметика и приоритеты
+    runParserTest("АРИФМЕТИКА", "res := a + b * (c - d) / 2;");
 
-    // Тест 2: Условный оператор с Else[cite: 10]
-    test("If-Else", "if x > 0 then write(1); else write(0);");
+    // 2. Условный оператор IF-THEN-ELSE
+    runParserTest("УСЛОВНЫЙ ОПЕРАТОР (полный)",
+                  "if x > 0 then\n"
+                  "  y := 1;\n"
+                  "else\n"
+                  "  y := 0;");
 
-    // Тест 3: Массивы и циклы[cite: 10]
-    test("Arrays", "while i < 10 do { arr[i] := i; i := i + 1; }"); 
+    // 3. Условный оператор IF без ELSE
+    runParserTest("УСЛОВНЫЙ ОПЕРАТОР (без else)",
+                  "if flag == 1 then write(flag);");
+
+    // 4. Цикл WHILE
+    runParserTest("ЦИКЛ WHILE", "while i < 10 do i := i + 1;");
+
+    // 5. Работа с массивами
+    runParserTest("МАССИВЫ",
+                  "val := arr[i];\n"
+                  "matrix[i, j] := val;");
+
+    // 6. Ввод данных
+    // Примечание: input_var содержит подчеркивание, убедитесь, что лексер его поддерживает как часть ID
+    runParserTest("ВВОД (READ)", "read(input_var); read(arr[k]);");
+
+    // 7. Вложенные конструкции
+    runParserTest("ВЛОЖЕННОСТЬ",
+                  "while i < n do\n"
+                  "  if arr[i] > max then\n"
+                  "    max := arr[i];\n"
+                  "  i := i + 1;");
+
+    // --- ТЕСТЫ НА ОШИБКИ ---
+    runParserTest("ОШИБКА: НЕТ 'THEN'", "if x > 0 res := 1;");
+    runParserTest("ОШИБКА: ЛИШНЯЯ СКОБКА", "a := (b + c));");
+    runParserTest("ОШИБКА: ИНДЕКС МАССИВА", "arr[i + ] := 10;");
+    runParserTest("ОШИБКА: НЕИЗВЕСТНЫЙ ОПЕРАТОР", "for i := 1 to 10 do write(i);");
 
     return 0;
 }
