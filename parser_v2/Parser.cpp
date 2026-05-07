@@ -104,8 +104,8 @@ void Parser::initMatrix()
         {SymbolType::TERMINAL, (int)READ},
         {SymbolType::TERMINAL, (int)LPAR},
         {SymbolType::TERMINAL, (int)ID},
-        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
         {SymbolType::SEMANTIC_ACTION, "a"}, // Адрес переменной
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
         {SymbolType::TERMINAL, (int)RPAR},
         {SymbolType::SEMANTIC_ACTION, "r"}, // Операция чтения
         {SymbolType::TERMINAL, (int)SEMI}};
@@ -132,8 +132,8 @@ void Parser::initMatrix()
 
     M[NonTerm::Statement][ID] = {
         {SymbolType::TERMINAL, (int)ID},
-        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
         {SymbolType::SEMANTIC_ACTION, "a"}, // Адрес левой части
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
         {SymbolType::TERMINAL, (int)ASSIGN},
         {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
         {SymbolType::SEMANTIC_ACTION, ":="}, // Оператор присваивания
@@ -145,7 +145,7 @@ void Parser::initMatrix()
         {SymbolType::SEMANTIC_ACTION, "2"}, // P2: Генерация J (переход через else)
         {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}};
     // Lambda
-    for (auto t : {SEMI, ELSE, TERM, RPAR}) // Добавил RPAR на всякий случай, если внутри скобок
+    for (auto t : {SEMI, TERM, RPAR}) // Добавил RPAR на всякий случай, если внутри скобок
     {
         M[NonTerm::ElsePart][t] = {};
     }
@@ -215,8 +215,8 @@ void Parser::initMatrix()
     // Factor -> ID ArrayIndex
     M[NonTerm::Factor][ID] = {
         {SymbolType::TERMINAL, (int)ID},
-        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
-        {SymbolType::SEMANTIC_ACTION, "a"}};
+        {SymbolType::SEMANTIC_ACTION, "a"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}};
 
     // Factor -> INT | FLOAT | STRING
     M[NonTerm::Factor][INT] = {
@@ -236,8 +236,8 @@ void Parser::initMatrix()
         {SymbolType::TERMINAL, (int)RPAR}};
     M[NonTerm::UnaryOperand][ID] = {
         {SymbolType::TERMINAL, (int)ID},
-        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
-        {SymbolType::SEMANTIC_ACTION, "a"}};
+        {SymbolType::SEMANTIC_ACTION, "a"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}};
     M[NonTerm::UnaryOperand][INT] = {
         {SymbolType::TERMINAL, (int)INT},
         {SymbolType::SEMANTIC_ACTION, "k"}};
