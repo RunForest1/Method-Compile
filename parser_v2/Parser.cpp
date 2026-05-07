@@ -171,9 +171,9 @@ void Parser::initMatrix()
     // ExpressionTail -> + Term ExpressionTail | - Term ExpressionTail | lambda
     M[NonTerm::ExpressionTail][ADD_OP] = {
         {SymbolType::TERMINAL, (int)ADD_OP},
-        {SymbolType::SEMANTIC_ACTION, "save_op"}, // Сохраняем оператор перед обработкой Term
+        {SymbolType::SEMANTIC_ACTION, "save_add_op"}, // Сохраняем оператор перед обработкой Term
         {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
-        {SymbolType::SEMANTIC_ACTION, "+"}, // Используем сохраненный оператор
+        {SymbolType::SEMANTIC_ACTION, "apply_add_op"}, // Применяем сохранённый аддитивный оператор
         {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
 
     // Lambda for ExpressionTail
@@ -191,9 +191,9 @@ void Parser::initMatrix()
     // TermTail -> * Factor TermTail | / Factor TermTail | lambda
     M[NonTerm::TermTail][MULT_OP] = {
         {SymbolType::TERMINAL, (int)MULT_OP},
-        {SymbolType::SEMANTIC_ACTION, "save_op"}, // Сохраняем оператор перед обработкой Factor
+        {SymbolType::SEMANTIC_ACTION, "save_mult_op"},
         {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
-        {SymbolType::SEMANTIC_ACTION, "mult_op"}, // Используем сохраненный оператор
+        {SymbolType::SEMANTIC_ACTION, "apply_mult_op"},
         {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
     // Lambda for TermTail
     for (auto t : {ADD_OP, SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
@@ -274,25 +274,85 @@ void Parser::initMatrix()
 }
 void Parser::initSemanticTable()
 {
-    // Сохранение оператора для последующего использования
-    semanticActions["save_op"] = [this]()
-    { savedOperator = prevLexem.value; };
+    // Сохранение аддитивного оператора (+ или -) в стек
+    semanticActions["save_add_op"] = [this]()
+    { operatorStack.push(prevLexem.value); };
 
-    // Бинарные операции - используют сохраненный оператор
+    // Применение сохранённого аддитивного оператора из стека
+    semanticActions["apply_add_op"] = [this]()
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
+
+    // Сохранение мультипликативного оператора (* или /) в стек
+    semanticActions["save_mult_op"] = [this]()
+    { operatorStack.push(prevLexem.value); };
+
+    // Применение сохранённого мультипликативного оператора из стека
+    semanticActions["apply_mult_op"] = [this]()
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
+
+    // Бинарные операции - используют сохраненный оператор (оставлены для обратной совместимости)
     semanticActions["+"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
     semanticActions["-"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
     semanticActions["*"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
     semanticActions["/"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
 
     // Универсальные действия для операторов, зависящих от контекста
     semanticActions["add_op"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
     semanticActions["mult_op"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
     semanticActions["unary_op"] = [this]()
     {
         if (prevLexem.value == "-")
