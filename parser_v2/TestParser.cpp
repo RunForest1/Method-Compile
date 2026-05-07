@@ -97,6 +97,33 @@ int main()
                   "    max := arr[i];\n"
                   "  i := i + 1;");
 
+
+    // 8. Полный тест: Сортировка пузырьком с выводом
+    runParserTest("СОРТИРОВКА ПУЗЫРЬКОМ + ВЫВОД",
+                  // 1. Вывод исходного массива
+                  "i := 0;\n"
+                  "while i < n do\n"
+                  "  write(arr[i]);\n"
+                  "  i := i + 1;\n"
+
+                  // 2. Алгоритм сортировки
+                  "i := 0;\n"
+                  "while i < n - 1 do\n"
+                  "  j := 0;\n"
+                  "  while j < n - i - 1 do\n"
+                  "    if arr[j] > arr[j + 1] then\n"
+                  "      temp := arr[j];\n"
+                  "      arr[j] := arr[j + 1];\n"
+                  "      arr[j + 1] := temp;\n"
+                  "    j := j + 1;\n"
+                  "  i := i + 1;\n"
+
+                  // 3. Вывод отсортированного массива
+                  "i := 0;\n"
+                  "while i < n do\n"
+                  "  write(arr[i]);\n"
+                  "  i := i + 1;");
+
     // --- ТЕСТЫ НА ОШИБКИ ---
     runParserTest("ОШИБКА: НЕТ 'THEN'", "if x > 0 res := 1;");
     runParserTest("ОШИБКА: ЛИШНЯЯ СКОБКА", "a := (b + c));");
