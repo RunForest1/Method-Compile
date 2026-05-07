@@ -275,6 +275,20 @@ void Parser::initMatrix()
 }
 void Parser::initSemanticTable()
 {
+    // Сохранение сравнения
+    semanticActions["save_comp_op"] = [this]()
+    {
+        operatorStack.push(prevLexem.value);
+    };
+
+    semanticActions["apply_comp_op"] = [this]()
+    {
+        if (!operatorStack.empty())
+        {
+            rpn.push_back({RpnElementType::OPERATOR, operatorStack.top()});
+            operatorStack.pop();
+        }
+    };
     // Сохранение аддитивного оператора (+ или -) в стек
     semanticActions["save_add_op"] = [this]()
     { operatorStack.push(prevLexem.value); };
