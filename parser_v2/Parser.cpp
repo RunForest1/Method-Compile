@@ -89,6 +89,8 @@ void Parser::initMatrix()
     M[NonTerm::Program][TERM] = {};
     M[NonTerm::Program][ELSE] = {};
 
+    M[NonTerm::Program][SEMI] = {};
+
     // --- 2. Statement ---
     M[NonTerm::Statement][WRITE] = {
         {SymbolType::TERMINAL, (int)WRITE},
@@ -169,8 +171,9 @@ void Parser::initMatrix()
     // ExpressionTail -> + Term ExpressionTail | - Term ExpressionTail | lambda
     M[NonTerm::ExpressionTail][ADD_OP] = {
         {SymbolType::TERMINAL, (int)ADD_OP},
+        {SymbolType::SEMANTIC_ACTION, "save_op"}, // Сохраняем оператор перед обработкой Term
         {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
-        {SymbolType::SEMANTIC_ACTION, "+"},
+        {SymbolType::SEMANTIC_ACTION, "+"}, // Используем сохраненный оператор
         {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
 
     // Lambda for ExpressionTail
@@ -188,8 +191,9 @@ void Parser::initMatrix()
     // TermTail -> * Factor TermTail | / Factor TermTail | lambda
     M[NonTerm::TermTail][MULT_OP] = {
         {SymbolType::TERMINAL, (int)MULT_OP},
+        {SymbolType::SEMANTIC_ACTION, "save_op"}, // Сохраняем оператор перед обработкой Factor
         {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
-        {SymbolType::SEMANTIC_ACTION, "mult_op"}, // Аналогично add_op, будет использовать prevLexem
+        {SymbolType::SEMANTIC_ACTION, "mult_op"}, // Используем сохраненный оператор
         {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
     // Lambda for TermTail
     for (auto t : {ADD_OP, SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
@@ -254,15 +258,13 @@ void Parser::initMatrix()
 
     // ArrayTail -> ] | , Expression ]
     M[NonTerm::ArrayTail][RBRACK] = {
-        {SymbolType::TERMINAL, (int)RBRACK},
-        {SymbolType::SEMANTIC_ACTION, "i"} // INDEX1
-    };
+        {SymbolType::SEMANTIC_ACTION, "i"}, // INDEX1 - ДО закрывающей скобки
+        {SymbolType::TERMINAL, (int)RBRACK}};
     M[NonTerm::ArrayTail][COMMA] = {
         {SymbolType::TERMINAL, (int)COMMA},
         {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
-        {SymbolType::TERMINAL, (int)RBRACK},
-        {SymbolType::SEMANTIC_ACTION, "i2"} // INDEX2
-    };
+        {SymbolType::SEMANTIC_ACTION, "i2"}, // INDEX2 - перед закрывающей скобкой
+        {SymbolType::TERMINAL, (int)RBRACK}};
 
     // --- 9. SemanticTrigger ---
     for (auto t : {SEMI, RPAR, RBRACK, COMMA, THEN, DO, ELSE, TERM})
@@ -272,21 +274,25 @@ void Parser::initMatrix()
 }
 void Parser::initSemanticTable()
 {
-    // Бинарные операции
-    semanticActions["+"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
-    semanticActions["-"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
-    semanticActions["*"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
-    semanticActions["/"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    // Сохранение оператора для последующего использования
+    semanticActions["save_op"] = [this]()
+    { savedOperator = prevLexem.value; };
 
-    // Универсальные действия для операторов, зависящих от контекста (prevLexem)
+    // Бинарные операции - используют сохраненный оператор
+    semanticActions["+"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    semanticActions["-"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    semanticActions["*"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+    semanticActions["/"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
+
+    // Универсальные действия для операторов, зависящих от контекста
     semanticActions["add_op"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
     semanticActions["mult_op"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); };
+    { rpn.push_back({RpnElementType::OPERATOR, savedOperator}); };
     semanticActions["unary_op"] = [this]()
     {
         if (prevLexem.value == "-")

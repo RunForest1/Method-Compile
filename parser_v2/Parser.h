@@ -44,6 +44,8 @@ private:
     std::stack<int> labelStack; // Стек для "прошивки" адресов меток (P1-P5)[cite: 8, 9].
     std::vector<RpnElement> rpn; // Результирующая последовательность ОПЗ[cite: 8, 9].
 
+    std::string savedOperator; // Переменная для сохранения оператора между семантическими действиями
+
     // --- Таблица семантических действий ---
     std::map<std::string, std::function<void()>> semanticActions;
 
