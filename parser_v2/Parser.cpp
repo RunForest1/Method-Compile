@@ -145,7 +145,7 @@ void Parser::initMatrix()
         {SymbolType::SEMANTIC_ACTION, "2"}, // P2: Генерация J (переход через else)
         {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}};
     // Lambda
-    for (auto t : {SEMI, TERM, RPAR}) // Добавил RPAR на всякий случай, если внутри скобок
+    for (auto t : {ID, IF, WHILE, READ, WRITE})
     {
         M[NonTerm::ElsePart][t] = {};
     }
@@ -156,8 +156,9 @@ void Parser::initMatrix()
             M[NonTerm::Condition][LPAR] = {
                 {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
                 {SymbolType::TERMINAL, (int)COMP_OP},
+                {SymbolType::SEMANTIC_ACTION, "save_comp_op"}, // Сохраняем оператор сравнения
                 {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
-                {SymbolType::SEMANTIC_ACTION, "="} // Запись оператора сравнения
+                {SymbolType::SEMANTIC_ACTION, "apply_comp_op"} // Применяем оператор сравнения
             };
 
     // --- 5. Expression & Term (Eliminated Left Recursion) ---
