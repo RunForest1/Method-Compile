@@ -142,13 +142,17 @@ void Parser::initMatrix()
     // --- 3. ElsePart ---
     M[NonTerm::ElsePart][ELSE] = {
         {SymbolType::TERMINAL, (int)ELSE},
-        {SymbolType::SEMANTIC_ACTION, "2"}, // P2: Генерация J (переход через else)
+        {SymbolType::SEMANTIC_ACTION, "2"},
         {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}};
-    // Lambda
+
+    // ElsePart -> ε
     for (auto t : {ID, IF, WHILE, READ, WRITE})
     {
         M[NonTerm::ElsePart][t] = {};
     }
+
+    // конец ввода
+    M[NonTerm::ElsePart][TERM] = {};
 
     // --- 4. Condition ---
     M[NonTerm::Condition][ID] =
@@ -421,12 +425,13 @@ void Parser::initSemanticTable()
         }
         int prevLabel = labelStack.top();
         labelStack.pop();
-        // Прошиваем предыдущую метку (адрес следующего элемента после J)
-        rpn[prevLabel].value = std::to_string(rpn.size() + 2);
 
         labelStack.push(rpn.size());                // Сохраняем позицию для нового J
-        rpn.push_back({RpnElementType::LABEL, ""}); // Placeholder
+        rpn.push_back({RpnElementType::LABEL, ""}); 
         rpn.push_back({RpnElementType::OPERATOR, "J"});
+
+        // Прошиваем предыдущую метку (адрес следующего элемента после J)
+        rpn[prevLabel].value = std::to_string(rpn.size());
     };
 
     semanticActions["3"] = [this]()
@@ -457,12 +462,12 @@ void Parser::initSemanticTable()
         int startLoop = labelStack.top(); // Метка начала цикла (из P4)
         labelStack.pop();
 
-        // Прошиваем выход: JF должен вести на элемент после J
-        rpn[exitLabel].value = std::to_string(rpn.size() + 2);
-
         // Генерируем переход на начало
         rpn.push_back({RpnElementType::LABEL, std::to_string(startLoop)});
         rpn.push_back({RpnElementType::OPERATOR, "J"});
+
+        // Прошиваем выход: JF должен вести на элемент после J
+        rpn[exitLabel].value = std::to_string(rpn.size());
     };
 }
 
