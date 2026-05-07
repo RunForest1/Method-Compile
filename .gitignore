@@ -33,3 +33,5 @@ Release/
 
 .gitignore
 tasks.json
+.vscode/tasks.json
+.vscode/*

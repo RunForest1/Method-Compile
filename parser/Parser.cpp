@@ -41,19 +41,16 @@ void Parser::parseExpression() {
     while (pos < tokens.size()) {
         Token t = advance();
 
-        // --- ИГНОРИРОВАНИЕ ПУСТЫХ ТОКЕНОВ И РАЗДЕЛИТЕЛЕЙ ---
-        // Если токен пустой или это просто разделитель (кроме скобок, которые обрабатываем отдельно)
         if (t.value.empty()) {
-            continue; // Пропускаем пустые токены, чтобы не падало с "Unexpected token ''"
+            continue; 
         }
 
-        // 1. Операнды: числа, идентификаторы, СТРОКИ
+        // 1. Операнды
         if (t.type == T_INT || t.type == T_FLOAT || t.type == T_ID || t.type == T_STRING) {
             output.push_back(t);
         }
-        // 2. Операторы (+, -, *, /, :=)
+        // 2. Операторы
         else if (isOperator(t)) {
-             // Важно: не выталкиваем '[' из стека, пока не встретим ']'
              while (!stack.empty() && 
                    stack.back().value != "(" && 
                    stack.back().value != "[" && 
@@ -63,7 +60,7 @@ void Parser::parseExpression() {
             }
             stack.push_back(t);
         }
-        // 3. Круглые скобки ()
+        // 3. Скобки ()
         else if (t.value == "(") {
             stack.push_back(t);
         }
@@ -80,12 +77,11 @@ void Parser::parseExpression() {
             }
             if (!foundOpen) throw std::runtime_error("Syntax Error: Mismatched ')'");
         }
-        // 4. Квадратные скобки []
+        // 4. Скобки []
         else if (t.value == "[") {
             stack.push_back(t);
         }
         else if (t.value == "]") {
-
             bool foundOpen = false;
             while (!stack.empty()) {
                 if (stack.back().value == "[") {
@@ -100,28 +96,35 @@ void Parser::parseExpression() {
             
             Token indexOp;
             indexOp.type = T_OPERATOR;
-            indexOp.value = OP_INDEX;
+            indexOp.value = OP_INDEX; // Убедитесь, что OP_INDEX определен, например, как "[]" или "@"
             indexOp.line = t.line;
             indexOp.column = t.column;
             output.push_back(indexOp);
         }
-        // 5. Разделители и конец инструкции
+        // 5. Разделители (;)
         else if (t.type == T_SEPARATOR) {
+            // Выгружаем остаток стека, так как инструкция закончилась
+            while (!stack.empty()) {
+                 if (stack.back().value == "(" || stack.back().value == "[") {
+                     throw std::runtime_error("Syntax Error: Unclosed bracket in statement");
+                 }
+                 output.push_back(stack.back());
+                 stack.pop_back();
+            }
             continue;
         }
         else if (t.type == T_KEYWORD) {
-             throw std::runtime_error("Syntax Error: Unexpected keyword '" + t.value + "' in expression");
+             throw std::runtime_error("Syntax Error: Unexpected keyword '" + t.value + "'");
         }
         else {
-            // Сюда мы попадаем, если токен не распознан
-            throw std::runtime_error("Syntax Error: Unexpected token '" + t.value + "' (Type: " + std::to_string(t.type) + ") at line " + std::to_string(t.line));
+            throw std::runtime_error("Syntax Error: Unexpected token '" + t.value + "'");
         }
     }
 
-    // Выгрузка остатка стека
+    // Финальная выгрузка (для последнего выражения, если после него нет ;)
     while (!stack.empty()) {
          if (stack.back().value == "(" || stack.back().value == "[") {
-             throw std::runtime_error("Syntax Error: Unclosed bracket/parenthesis");
+             throw std::runtime_error("Syntax Error: Unclosed bracket/parenthesis at EOF");
          }
          output.push_back(stack.back());
          stack.pop_back();
