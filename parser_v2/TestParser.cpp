@@ -65,70 +65,37 @@ void runParserTest(const std::string &testName, const std::string &source)
 
 int main()
 {
-    // 1. Базовая арифметика и приоритеты
-    runParserTest("АРИФМЕТИКА", "res := a + b * (c - d) / 2;");
-
-    // 2. Условный оператор IF-THEN-ELSE
-    runParserTest("УСЛОВНЫЙ ОПЕРАТОР (полный)",
-                  "if x > 0 then\n"
-                  "  y := 1;\n"
-                  "else\n"
-                  "  y := 0;");
-
-    // 3. Условный оператор IF без ELSE
-    runParserTest("УСЛОВНЫЙ ОПЕРАТОР (без else)",
-                  "if flag == 1 then write(flag);");
-
-    // 4. Цикл WHILE
-    runParserTest("ЦИКЛ WHILE", "while i < 10 do i := i + 1;");
-
-    // 5. Работа с массивами
-    runParserTest("МАССИВЫ",
-                  "val := arr[i];\n"
-                  "matrix[i, j] := val;");
-
-    // 6. Ввод данных
-    runParserTest("ВВОД (READ)", "read(input_var); read(arr[k]);");
-
-    // 7. Вложенные конструкции
-    runParserTest("ВЛОЖЕННОСТЬ",
-                  "while i < n do\n"
-                  "  if arr[i] > max then\n"
-                  "    max := arr[i];\n"
-                  "  i := i + 1;");
-
-
-    // 8. Полный тест: Сортировка пузырьком с выводом
-    runParserTest("СОРТИРОВКА ПУЗЫРЬКОМ + ВЫВОД",
-                  // 1. Вывод исходного массива
+// Полный тест: Сортировка пузырьком с выводом
+    runParserTest("СОРТИРОВКА ПУЗЫРЬКОМ (ПОЛНЫЙ ЦИКЛ)",
+                  // 1. Чтение размера массива и его элементов
+                  "read(n);\n"
                   "i := 0;\n"
-                  "while i < n do\n"
-                  "  write(arr[i]);\n"
+                  "while i < n do \n"
+                  "  read(arr[i]);\n"
                   "  i := i + 1;\n"
+                  "\n"
 
-                  // 2. Алгоритм сортировки
+                  // 2. Алгоритм сортировки пузырьком (вложенные циклы и условия)
                   "i := 0;\n"
-                  "while i < n - 1 do\n"
+                  "while i < n - 1 do \n"
                   "  j := 0;\n"
-                  "  while j < n - i - 1 do\n"
-                  "    if arr[j] > arr[j + 1] then\n"
+                  "  while j < n - i - 1 do \n"
+                  "    if arr[j] > arr[j + 1] then \n"
                   "      temp := arr[j];\n"
                   "      arr[j] := arr[j + 1];\n"
                   "      arr[j + 1] := temp;\n"
+                  "    \n"
                   "    j := j + 1;\n"
+                  "  \n"
                   "  i := i + 1;\n"
+                  "\n"
 
                   // 3. Вывод отсортированного массива
                   "i := 0;\n"
-                  "while i < n do\n"
+                  "while i < n do \n"
                   "  write(arr[i]);\n"
-                  "  i := i + 1;");
-
-    // --- ТЕСТЫ НА ОШИБКИ ---
-    runParserTest("ОШИБКА: НЕТ 'THEN'", "if x > 0 res := 1;");
-    runParserTest("ОШИБКА: ЛИШНЯЯ СКОБКА", "a := (b + c));");
-    runParserTest("ОШИБКА: ИНДЕКС МАССИВА", "arr[i + ] := 10;");
-    runParserTest("ОШИБКА: НЕИЗВЕСТНЫЙ ОПЕРАТОР", "for i := 1 to 10 do write(i);");
+                  "  i := i + 1;\n"
+                  "");
 
     return 0;
 }

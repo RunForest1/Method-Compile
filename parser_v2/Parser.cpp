@@ -76,6 +76,7 @@ void Parser::initMatrix()
     auto SEMI = (LexemType)2005;
     auto COMMA = (LexemType)2006;
 
+
     // --- 1. Program ---
     // Program -> Statement Program | lambda
     // Если видим начало оператора, разворачиваем Statement, затем рекурсивно Program
@@ -90,6 +91,7 @@ void Parser::initMatrix()
     M[NonTerm::Program][ELSE] = {};
 
     M[NonTerm::Program][SEMI] = {};
+
 
     // --- 2. Statement ---
     M[NonTerm::Statement][WRITE] = {
@@ -139,6 +141,7 @@ void Parser::initMatrix()
         {SymbolType::SEMANTIC_ACTION, ":="}, // Оператор присваивания
         {SymbolType::TERMINAL, (int)SEMI}};
 
+
     // --- 3. ElsePart ---
     M[NonTerm::ElsePart][ELSE] = {
         {SymbolType::TERMINAL, (int)ELSE},
@@ -155,15 +158,15 @@ void Parser::initMatrix()
     M[NonTerm::ElsePart][TERM] = {};
 
     // --- 4. Condition ---
-    M[NonTerm::Condition][ID] =
-        M[NonTerm::Condition][INT] =
-            M[NonTerm::Condition][LPAR] = {
-                {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
-                {SymbolType::TERMINAL, (int)COMP_OP},
-                {SymbolType::SEMANTIC_ACTION, "save_comp_op"}, // Сохраняем оператор сравнения
-                {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
-                {SymbolType::SEMANTIC_ACTION, "apply_comp_op"} // Применяем оператор сравнения
-            };
+    for (auto t : {ID, INT, FLOAT, STRING, LPAR, ADD_OP})
+    {
+        M[NonTerm::Condition][t] = {
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+            {SymbolType::TERMINAL, (int)COMP_OP},
+            {SymbolType::SEMANTIC_ACTION, "save_comp_op"},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+            {SymbolType::SEMANTIC_ACTION, "apply_comp_op"}};
+    }
 
     // --- 5. Expression & Term (Eliminated Left Recursion) ---
     for (auto t : {ID, INT, FLOAT, STRING, LPAR, ADD_OP}) // ADD_OP для унарного минуса/плюса в Factor
@@ -426,8 +429,8 @@ void Parser::initSemanticTable()
         int prevLabel = labelStack.top();
         labelStack.pop();
 
-        labelStack.push(rpn.size());                // Сохраняем позицию для нового J
-        rpn.push_back({RpnElementType::LABEL, ""}); 
+        labelStack.push(rpn.size()); // Сохраняем позицию для нового J
+        rpn.push_back({RpnElementType::LABEL, ""});
         rpn.push_back({RpnElementType::OPERATOR, "J"});
 
         // Прошиваем предыдущую метку (адрес следующего элемента после J)
