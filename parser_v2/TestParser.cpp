@@ -2,7 +2,7 @@
 #include <vector>
 #include <iomanip>
 #include <sstream>
-#include "../lexer_v2/Lexer.h"
+#include "Lexer.h"
 #include "Parser.h"
 
 /**
@@ -65,37 +65,41 @@ void runParserTest(const std::string &testName, const std::string &source)
 
 int main()
 {
-// Полный тест: Сортировка пузырьком с выводом
+    // Полный тест: Сортировка пузырьком с выводом
     runParserTest("СОРТИРОВКА ПУЗЫРЬКОМ (ПОЛНЫЙ ЦИКЛ)",
                   // 1. Чтение размера массива и его элементов
                   "read(n);\n"
                   "i := 0;\n"
                   "while i < n do \n"
+                  "write('Greater');\n"
                   "  read(arr[i]);\n"
                   "  i := i + 1;\n"
                   "\n"
+                  "arr[1] := 123;\n"
+                  "write(arr[2]);\n"
 
-                  // 2. Алгоритм сортировки пузырьком (вложенные циклы и условия)
-                  "i := 0;\n"
-                  "while i < n - 1 do \n"
-                  "  j := 0;\n"
-                  "  while j < n - i - 1 do \n"
-                  "    if arr[j] > arr[j + 1] then \n"
-                  "      temp := arr[j];\n"
-                  "      arr[j] := arr[j + 1];\n"
-                  "      arr[j + 1] := temp;\n"
-                  "    \n"
-                  "    j := j + 1;\n"
-                  "  \n"
-                  "  i := i + 1;\n"
-                  "\n"
+                  //   // 2. Алгоритм сортировки пузырьком (вложенные циклы и условия)
+                  //   "i := 0;\n"
+                  //   "while i < n - 1 do \n"
+                  //   "  j := 0;\n"
+                  //   "  while j < n - i - 1 do \n"
+                  //   "    if arr[j] > arr[j + 1] then \n"
+                  //   "      temp := arr[j];\n"
+                  //   "      arr[j] := arr[j + 1];\n"
+                  //   "      arr[j + 1] := temp;\n"
+                  //   "    \n"
+                  //   "    j := j + 1;\n"
+                  //   "  \n"
+                  //   "  i := i + 1;\n"
+                  //   "\n"
 
-                  // 3. Вывод отсортированного массива
-                  "i := 0;\n"
-                  "while i < n do \n"
-                  "  write(arr[i]);\n"
-                  "  i := i + 1;\n"
-                  "");
+                  //   // 3. Вывод отсортированного массива
+                  //   "i := 0;\n"
+                  //   "while i < n do \n"
+                  //   "  write(arr[i]);\n"
+                  //   "  i := i + 1;\n"
+                  //   ""
+    );
 
     return 0;
 }
