@@ -6,7 +6,7 @@
 #include <functional>
 #include <map>
 #include <string>
-#include "Lexer.h"
+#include "../lexer_v2/Lexer.h"
 #include "Rpn.h"
 #include "ParserTypes.h"
 
