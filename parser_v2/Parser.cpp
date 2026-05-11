@@ -44,6 +44,10 @@ int Parser::getExtendedType(const Lexem &l)
             return 2005;
         if (l.value == ",")
             return 2006;
+        if (l.value == "{")
+            return 2007;
+        if (l.value == "}")
+            return 2008;
     }
     return (int)l.type;
 }
@@ -75,7 +79,8 @@ void Parser::initMatrix()
     auto RBRACK = (LexemType)2004;
     auto SEMI = (LexemType)2005;
     auto COMMA = (LexemType)2006;
-
+    auto LBRACE = (LexemType)2007;
+    auto RBRACE = (LexemType)2008;
 
     // --- 1. Program ---
     // Program -> Statement Program | lambda
@@ -92,6 +97,7 @@ void Parser::initMatrix()
 
     M[NonTerm::Program][SEMI] = {};
 
+    M[NonTerm::Program][RBRACE] = {};
 
     // --- 2. Statement ---
     M[NonTerm::Statement][WRITE] = {
@@ -141,6 +147,10 @@ void Parser::initMatrix()
         {SymbolType::SEMANTIC_ACTION, ":="}, // Оператор присваивания
         {SymbolType::TERMINAL, (int)SEMI}};
 
+    M[NonTerm::Statement][LBRACE] = {
+        {SymbolType::TERMINAL, (int)LBRACE},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Program},
+        {SymbolType::TERMINAL, (int)RBRACE}};
 
     // --- 3. ElsePart ---
     M[NonTerm::ElsePart][ELSE] = {
