@@ -270,6 +270,14 @@
           | L_FLOAT
           | L_STRING
 
+<MathFunction> -> L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+
 <UnaryOperand> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
                 | L_ID <ArrayIndex>
                 | L_INT
