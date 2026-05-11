@@ -19,6 +19,7 @@
 * `<UnaryOperand>` — операнд, к которому применяется унарный знак (соответствует нетерминалу `G`).
 * `<ArrayIndex>` — индексный блок массива (поддержка одномерных и двумерных массивов).
 * `<SemanticTrigger>` — нетерминал, порождающий λ, служащий для вызова семантического действия в ОПС (соответствует `Z`).
+* `<MathFunction>` - нетерминал, который обрабатывает все математические операции как ключевые слова.
 
 **Порождающие правила (стандартная форма):**
 
@@ -52,10 +53,19 @@
 <Factor> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
            | L_ADDITIVE_OPERATOR('+') <UnaryOperand>
            | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger>
+           | <MathFunction>
            | L_ID <ArrayIndex>
            | L_INT
            | L_FLOAT
            | L_STRING
+
+<MathFunction> -> L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
 
 <UnaryOperand> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
                 | L_ID <ArrayIndex>
@@ -140,10 +150,19 @@
 <Factor> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
            | L_ADDITIVE_OPERATOR('+') <UnaryOperand>
            | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger>
+           | <MathFunction>
            | L_ID <ArrayIndex>
            | L_INT
            | L_FLOAT
            | L_STRING
+
+<MathFunction> -> L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+                | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
 
 <UnaryOperand> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
                 | L_ID <ArrayIndex>
@@ -190,6 +209,13 @@
 <Condition> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
              | L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
              | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
+             | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
              | L_ID <ArrayIndex> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
              | L_INT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
              | L_FLOAT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>
@@ -198,6 +224,13 @@
 <Expression> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail>
               | L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail>
               | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
+              | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>
               | L_ID <ArrayIndex> <TermTail> <ExpressionTail>
               | L_INT <TermTail> <ExpressionTail>
               | L_FLOAT <TermTail> <ExpressionTail>
@@ -208,6 +241,13 @@
 <Term> -> L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail>
         | L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail>
         | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail>
+        | L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
+        | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
+        | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
+        | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
+        | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
+        | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
+        | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>
         | L_ID <ArrayIndex> <TermTail>
         | L_INT <TermTail>
         | L_FLOAT <TermTail>
@@ -218,6 +258,13 @@
 <Factor> -> L_DELIMITER('(') <Expression> L_DELIMITER(')')
           | L_ADDITIVE_OPERATOR('+') <UnaryOperand>
           | L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger>
+          | L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+          | L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>
+          | L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+          | L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+          | L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+          | L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
+          | L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>
           | L_ID <ArrayIndex>
           | L_INT
           | L_FLOAT
