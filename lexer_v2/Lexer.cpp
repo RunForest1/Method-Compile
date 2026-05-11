@@ -53,6 +53,7 @@ CharClass Lexer::getCharClass(char c) const {
         case '+':
         case '-': return C_ADDITIVE;
         case '(': case ')':
+        case '{': case '}':
         case '[': case ']':
         case ';': case ',': return C_DELIMITER;
         default: return C_OTHER;
