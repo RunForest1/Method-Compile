@@ -13,6 +13,7 @@
 *   $i, i2$ — операции индексации одномерного и двумерного массива;
 *   $:=$ — запись операции присваивания;
 *   $r, w$ — операции чтения и вывода.
+*   $POW, LOG, EXP, SIN, COS, TANH, CTANH$ — запись соответствующих математических операций;
 
 | Нетерминал | Порождающее правило в нестрогой форме Грейбах | Семантические действия |
 |---|---|---|
@@ -38,6 +39,13 @@
 | `<Condition>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
 | `<Condition>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
 | `<Condition>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ -' $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ POW $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ LOG $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ EXP $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ SIN $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ COS $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ TANH $\Box$ $\Box$ $\Box$ $\Box$ = |
+| `<Condition>` | `L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ CTANH $\Box$ $\Box$ $\Box$ $\Box$ = |
 | `<Condition>` | `L_ID <ArrayIndex> <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | a $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ = |
 | `<Condition>` | `L_INT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | k $\Box$ $\Box$ $\Box$ $\Box$ = |
 | `<Condition>` | `L_FLOAT <TermTail> <ExpressionTail> L_COMPARISON_OPERATOR <Expression> <SemanticTrigger>` | k $\Box$ $\Box$ $\Box$ $\Box$ = |
@@ -45,6 +53,13 @@
 | `<Expression>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ |
 | `<Expression>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ |
 | `<Expression>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ -' $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ POW $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ LOG $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ EXP $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ SIN $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ COS $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ TANH $\Box$ $\Box$ |
+| `<Expression>` | `L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail> <ExpressionTail>` | $\Box$ $\Box$ $\Box$ $\Box$ CTANH $\Box$ $\Box$ |
 | `<Expression>` | `L_ID <ArrayIndex> <TermTail> <ExpressionTail>` | a $\Box$ $\Box$ $\Box$ |
 | `<Expression>` | `L_INT <TermTail> <ExpressionTail>` | k $\Box$ $\Box$ |
 | `<Expression>` | `L_FLOAT <TermTail> <ExpressionTail>` | k $\Box$ $\Box$ |
@@ -54,6 +69,13 @@
 | `<Term>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')') <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ |
 | `<Term>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand> <TermTail>` | $\Box$ $\Box$ $\Box$ |
 | `<Term>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ -' $\Box$ |
+| `<Term>` | `L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ POW $\Box$ |
+| `<Term>` | `L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ LOG $\Box$ |
+| `<Term>` | `L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ EXP $\Box$ |
+| `<Term>` | `L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ SIN $\Box$ |
+| `<Term>` | `L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ COS $\Box$ |
+| `<Term>` | `L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ TANH $\Box$ |
+| `<Term>` | `L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger> <TermTail>` | $\Box$ $\Box$ $\Box$ $\Box$ CTANH $\Box$ |
 | `<Term>` | `L_ID <ArrayIndex> <TermTail>` | a $\Box$ $\Box$ |
 | `<Term>` | `L_INT <TermTail>` | k $\Box$ |
 | `<Term>` | `L_FLOAT <TermTail>` | k $\Box$ |
@@ -63,6 +85,13 @@
 | `<Factor>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')')` | $\Box$ $\Box$ $\Box$ |
 | `<Factor>` | `L_ADDITIVE_OPERATOR('+') <UnaryOperand>` | $\Box$ $\Box$ |
 | `<Factor>` | `L_ADDITIVE_OPERATOR('-') <UnaryOperand> <SemanticTrigger>` | $\Box$ $\Box$ -' |
+| `<Factor>` | `L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ POW |
+| `<Factor>` | `L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ LOG |
+| `<Factor>` | `L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ EXP |
+| `<Factor>` | `L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ SIN |
+| `<Factor>` | `L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ COS |
+| `<Factor>` | `L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ TANH |
+| `<Factor>` | `L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ CTANH |
 | `<Factor>` | `L_ID <ArrayIndex>` | a $\Box$ |
 | `<Factor>` | `L_INT` | k |
 | `<Factor>` | `L_FLOAT` | k |
@@ -131,6 +160,13 @@
 | `WRITE` | Ввод/Вывод | Печать значения (верхний элемент стека) |
 | `INDEX1` | Массивы | Вычисление адреса элемента `A[i]` |
 | `INDEX2` | Массивы | Вычисление адреса элемента `A[i, j]` |
+| `POW` | Бинарная | Возведение второго сверху элемента в степень верхнего |
+| `LOG` | Бинарная | Логарифм второго сверху элемента по основанию верхнего |
+| `EXP` | Унарная | Экспонента (e^x) |
+| `SIN` | Унарная | Синус |
+| `COS` | Унарная | Косинус |
+| `TANH` | Унарная | Гиперболический тангенс |
+| `CTANH` | Унарная | Гиперболический котангенс |
 
 ---
 
@@ -143,3 +179,4 @@
 2.  **CONST_VAL:** Непосредственное значение (целое, вещественное или строка).
 3.  **OPERATOR:** Код операции из таблицы в разделе 5.
 4.  **LABEL:** Целое число — индекс (адрес) элемента в массиве ОПС. Используется как операнд для команд `J` и `JF`.
+
