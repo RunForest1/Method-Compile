@@ -29,6 +29,16 @@ int Parser::getExtendedType(const Lexem &l)
             return 1006;
         if (l.value == "write")
             return 1007;
+        if (l.value == "sin")
+            return 1008;
+        if (l.value == "cos")
+            return 1009;
+        if (l.value == "exp")
+            return 1010;
+        if (l.value == "power")
+            return 1011;
+        if (l.value == "log")
+            return 1012;
     }
     if (l.type == LexemType::L_DELIMITER)
     {
@@ -178,12 +188,20 @@ void Parser::initMatrix()
             {SymbolType::SEMANTIC_ACTION, "apply_comp_op"}};
     }
 
-    // --- 5. Expression & Term (Eliminated Left Recursion) ---
-    for (auto t : {ID, INT, FLOAT, STRING, LPAR, ADD_OP}) // ADD_OP для унарного минуса/плюса в Factor
+    std::vector<LexemType> firstFactor = {
+        ID, INT, FLOAT, STRING, LPAR, ADD_OP,
+        (LexemType)1008, (LexemType)1009, (LexemType)1010, (LexemType)1011, (LexemType)1012 // sin, cos, exp, power, log
+    };
+    // --- 5. Expression & Term ---
+    for (auto t : firstFactor)
     {
         M[NonTerm::Expression][t] = {
             {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
             {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
+
+        M[NonTerm::Term][t] = {
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
     }
 
     // ExpressionTail -> + Term ExpressionTail | - Term ExpressionTail | lambda
@@ -197,14 +215,6 @@ void Parser::initMatrix()
     // Lambda for ExpressionTail
     for (auto t : {SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
         M[NonTerm::ExpressionTail][t] = {};
-
-    // Term -> Factor TermTail
-    for (auto t : {ID, INT, FLOAT, STRING, LPAR, ADD_OP})
-    {
-        M[NonTerm::Term][t] = {
-            {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
-            {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
-    }
 
     // TermTail -> * Factor TermTail | / Factor TermTail | lambda
     M[NonTerm::TermTail][MULT_OP] = {
@@ -247,6 +257,9 @@ void Parser::initMatrix()
         {SymbolType::TERMINAL, (int)STRING},
         {SymbolType::SEMANTIC_ACTION, "k"}};
 
+    M[NonTerm::Factor][(LexemType)1008] = {{SymbolType::NON_TERMINAL, (int)NonTerm::MathFunction}}; // sin
+    M[NonTerm::Factor][(LexemType)1011] = {{SymbolType::NON_TERMINAL, (int)NonTerm::MathFunction}}; // power
+
     // --- 7. UnaryOperand ---
     M[NonTerm::UnaryOperand][LPAR] = {
         {SymbolType::TERMINAL, (int)LPAR},
@@ -268,6 +281,25 @@ void Parser::initMatrix()
         {SymbolType::TERMINAL, (int)LBRACK},
         {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
         {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayTail}};
+
+    // Поддержка двумерных массивов в ArrayIndex [E, E]
+    M[NonTerm::ArrayIndex][(LexemType)2003] = {
+        {SymbolType::TERMINAL, 2003}, // [
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayTail}};
+
+    // Сначала разрешаем ArrayIndex быть пустым перед скобками и знаками препинания
+    M[NonTerm::ArrayIndex][(LexemType)2001] = {}; // Перед '(' (начало аргументов функции)
+    M[NonTerm::ArrayIndex][(LexemType)2002] = {}; // Перед ')'
+    M[NonTerm::ArrayIndex][(LexemType)2005] = {}; // Перед ','
+    M[NonTerm::ArrayIndex][(LexemType)2006] = {}; // Перед ';'
+
+    // Теперь разрешаем ArrayIndex быть пустым перед всеми вашими типами операторов
+    M[NonTerm::ArrayIndex][LexemType::L_ADDITIVE_OPERATOR] = {};       // Перед + -
+    M[NonTerm::ArrayIndex][LexemType::L_MULTIPLICATIVE_OPERATOR] = {}; // Перед * /
+    M[NonTerm::ArrayIndex][LexemType::L_COMPARISON_OPERATOR] = {};     // Перед < > <= >= == !=
+    M[NonTerm::ArrayIndex][LexemType::L_ASSIGNMENT_OPERATOR] = {};
+
     // Lambda for ArrayIndex
     for (auto t : {ASSIGN, SEMI, ADD_OP, MULT_OP, COMP_OP, RPAR, COMMA, THEN, DO, ELSE, RBRACK})
     {
@@ -281,13 +313,47 @@ void Parser::initMatrix()
     M[NonTerm::ArrayTail][COMMA] = {
         {SymbolType::TERMINAL, (int)COMMA},
         {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
-        {SymbolType::SEMANTIC_ACTION, "i2"}, // INDEX2 - перед закрывающей скобкой
+        {SymbolType::SEMANTIC_ACTION, "i2"},
         {SymbolType::TERMINAL, (int)RBRACK}};
+
+    M[NonTerm::ArrayTail][(LexemType)2004] = {{SymbolType::TERMINAL, 2004}, {SymbolType::SEMANTIC_ACTION, "INDEX1"}};
 
     // --- 9. SemanticTrigger ---
     for (auto t : {SEMI, RPAR, RBRACK, COMMA, THEN, DO, ELSE, TERM})
     {
         M[NonTerm::SemanticTrigger][t] = {};
+    }
+
+    // --- 10. MathFunction ---
+    auto COMMA_TERM = (LexemType)2006;
+
+    // power(E, E)
+    M[NonTerm::MathFunction][(LexemType)1011] = {
+        {SymbolType::TERMINAL, 1011}, {SymbolType::TERMINAL, 2001}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, 2006}, // Теперь правильно: запятая
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, 2002},
+        {SymbolType::SEMANTIC_ACTION, "POW"}};
+
+    for (auto t : {(LexemType)1008, (LexemType)1009, (LexemType)1010, (LexemType)1012})
+    {
+        M[NonTerm::Factor][t] = {{SymbolType::NON_TERMINAL, (int)NonTerm::MathFunction}};
+
+        std::string action;
+        if (t == (LexemType)1008)
+            action = "SIN";
+        else if (t == (LexemType)1009)
+            action = "COS";
+        else if (t == (LexemType)1010)
+            action = "EXP";
+        else
+            action = "LOG";
+
+        M[NonTerm::MathFunction][t] = {
+            {SymbolType::TERMINAL, (int)t},
+            {SymbolType::TERMINAL, 2001}, // (
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+            {SymbolType::TERMINAL, 2002}, // )
+            {SymbolType::SEMANTIC_ACTION, action}};
     }
 }
 void Parser::initSemanticTable()
@@ -420,6 +486,27 @@ void Parser::initSemanticTable()
     semanticActions["="] = [this]()
     {
         rpn.push_back({RpnElementType::OPERATOR, prevLexem.value}); // ==, !=, <, >, etc.
+    };
+
+    semanticActions["SIN"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "SIN"}); };
+    semanticActions["COS"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "COS"}); };
+    semanticActions["EXP"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "EXP"}); }; 
+    semanticActions["LOG"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "LOG"}); };
+    semanticActions["POW"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "POW"}); };
+
+    // Добавьте эти строки:
+    semanticActions["INDEX1"] = [this]()
+    {
+        rpn.push_back({RpnElementType::OPERATOR, "INDEX1"});
+    };
+    semanticActions["INDEX2"] = [this]()
+    {
+        rpn.push_back({RpnElementType::OPERATOR, "INDEX2"});
     };
 
     // Label Programs P1-P5
