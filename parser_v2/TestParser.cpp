@@ -79,27 +79,32 @@ int main()
                   "write(arr[2]);\n"
 
                   //   // 2. Алгоритм сортировки пузырьком (вложенные циклы и условия)
-                    "i := 0;\n"
-                    "while i < n - 1 do {\n"
-                    "  j := 0;\n"
-                    "  while j < n - i - 1 do {\n"
-                    "    if arr[j] > arr[j + 1] then {\n"
-                    "      temp := arr[j];\n"
-                    "      arr[j] := arr[j + 1];\n"
-                    "      arr[j + 1] := temp;\n"
-                    "    }\n"
-                    "    j := j + 1;\n"
-                    "  }\n"
-                    "  i := i + 1;\n"
-                    "}\n"
+                  "i := 0;\n"
+                  "while i < n - 1 do {\n"
+                  "  j := 0;\n"
+                  "  while j < n - i - 1 do {\n"
+                  "    if arr[j] > arr[j + 1] then {\n"
+                  "      temp := arr[j];\n"
+                  "      arr[j] := arr[j + 1];\n"
+                  "      arr[j + 1] := temp;\n"
+                  "    }\n"
+                  "    j := j + 1;\n"
+                  "  }\n"
+                  "  i := i + 1;\n"
+                  "}\n"
 
                   //   // 3. Вывод отсортированного массива
-                    "i := 0;\n"
-                    "while i < n do {\n"
-                    "  write(arr[i]);\n"
-                    "  i := i + 1;\n"
-                    "}\n"
-    );
+                  "i := 0;\n"
+                  "while i < n do {\n"
+                  "  write(arr[i]);\n"
+                  "  i := i + 1;\n"
+                  "}\n");
+    runParserTest("МАТЕМАТИЧЕСКИЕ ФУНКЦИИ (ВСЕ ТИПЫ)",
+                  "a := sin(x) + cos(3.14); \n"
+                  "b := exp(1) * log(100); \n"
+                  "c := power(2, 3); \n"
+                  "d := sin(cos(exp(x))); \n"
+                  "res := power(a + b, sin(c) * 2);\n");
 
     return 0;
 }
