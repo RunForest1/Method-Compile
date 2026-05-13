@@ -179,26 +179,22 @@ int main() {
         "while i < 2 do {\n"
         "    j := 0;\n"
         "    while j < 2 do {\n"
-        "        matrix[i][j] := i + j;\n" // Запись в матрицу (INDEX1 + INDEX2)
+        "        matrix[i, j] := i + j;\n"
         "        j := j + 1;\n"
         "    }\n"
         "    i := i + 1;\n"
         "}\n"
-        "write('Matrix element [1][1] (expected 2):');\n"
-        "write(matrix[1][1]);\n"
-        "\n"
-        "// Косвенная адресация (массив как индекс)\n"
+        "write('Matrix element [1, 1] (expected 2):');\n"
+        "write(matrix[1, 1]);\n"
         "indices[0] := 1;\n"
         "indices[1] := 0;\n"
-        "val := matrix[indices[0]][indices[1]];\n" // matrix[1][0]
-        "write('Complex nested access [1][0] (expected 1):');\n"
+        "val := matrix[indices[0], indices[1]];\n"
+        "write('Complex nested access [1, 0] (expected 1):');\n"
         "write(val);\n"
-        "\n"
-        "// Рекурсивная запись через вложенный поиск\n"
         "a := 1;\n"
-        "matrix[matrix[0][a]][indices[0]] := 888;\n" // matrix[1][1] := 888
-        "write('After recursive write [1][1] (expected 888):');\n"
-        "write(matrix[1][1]);\n";
+        "matrix[matrix[0, a], indices[0]] := 888;\n"
+        "write('After recursive write [1, 1] (expected 888):');\n"
+        "write(matrix[1, 1]);\n";
 
     runFullChainTest("FIZZBUZZ (Вложенные IF)", fizzBuzzCode);
     runFullChainTest("БАЗОВАЯ МАТЕМАТИКА", mathBasicCode);
