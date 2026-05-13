@@ -67,12 +67,10 @@ private:
     void printError(const Lexem &errLexem) const;
 
     const std::set<std::string> keywords = {
-        "if", "then", "else", "while", "do", "read", "write", "int", "float", "sin", "cos",
-        "log",
-        "exp",
-        "tanh",
-        "ctanh",
-        "power"};
+        "if", "then", "else", "while", "do",
+        "read", "write", "int", "float", 
+        "sin", "cos", "tanh", "ctanh", "log", "exp", "power", 
+    };
 };
 
 #endif
