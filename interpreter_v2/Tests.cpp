@@ -196,6 +196,87 @@ int main() {
         "write('After recursive write [1, 1] (expected 888):');\n"
         "write(matrix[1, 1]);\n";
 
+    // Тест на приоритет и ассоциативность
+    std::string mathPriorityCode = 
+        "x := -power(2, power(2, 3));\n" 
+        "y := 10 - 5 - 2 + 1;\n"
+        "z := 100 / 2 / 2 * 5;\n"
+        "res := (2 + 2) * power(2, (1 + 2));\n"
+        "write('--- Priority Test ---');\n"
+        "write(x); write(y); write(z); write(res);\n";
+
+    // Тангенсы и Котангенсы
+    std::string trigExtraCode = 
+        "pi := 3.14159265;\n"
+        "t1 := tan(0);\n"
+        "t2 := tan(pi / 4);\n"
+        "ct1 := ctan(pi / 4);\n"
+        "write('--- Trig Tan/Ctan ---');\n"
+        "write(t1); write(t2); write(ct1);\n";
+
+    // Сложная логика
+    std::string logicStressCode = 
+        "a := 10; b := 20; c := 30;\n"
+        "write('--- Logic Stress ---');\n"
+        "if a < b then {\n"
+        "  if b < c then {\n"
+        "    if c > a then {\n"
+        "      write('Nested IF: Success');\n"
+        "    }\n"
+        "  }\n"
+        "}\n"
+        "res := 0;\n"
+        "if a < b then { res := res + 1; }\n"
+        "if b < c then { res := res + 1; }\n"
+        "if c < a then { res := res + 1; }\n"
+        "write('Count of true conditions (Expected 2):');\n"
+        "write(res);\n";
+
+    // Смена типов переменных
+    std::string typeMorphCode = 
+        "var := 10;\n"
+        "write(var);\n"
+        "var := var + 0.5;\n"
+        "write(var);\n"
+        "var := 'Now I am a string';\n"
+        "write(var);\n"
+        "arr[0] := var;\n"
+        "write(arr[0]);\n";
+
+    // Глубокая индексация
+    std::string deepArrayCode = 
+        "i := 0;\n"
+        "while i < 5 do {\n"
+        "  data[i] := i * 10;\n"
+        "  i := i + 1;\n"
+        "}\n"
+        "/*Тест комментария*/\n"
+        "indexcalc := data[1] / 5;\n" 
+        "indexval := data[indexcalc];\n"
+        "write('Deep Array Index (Expected 20):');\n"
+        "write(indexval);\n"
+        "midx1 := sin(0);\n"
+        "midx2 := exp(0);\n"
+        "matrix[midx1, midx2] := 777;\n"
+        "write('Matrix[0, 1] (Expected 777):');\n"
+        "write(matrix[0, 1]);\n";
+
+    // Число Фибоначчи
+    std::string fibCode = 
+        "n := 10;\n"
+        "prev := 0;\n"
+        "curr := 1;\n"
+        "i := 0;\n"
+        "/*Тест комментария*/\n"
+        "write('Fibonacci sequence up to 10:');\n"
+        "while i < n do {\n"
+        "  write(prev);\n"
+        "  next := prev + curr;\n"
+        "  prev := curr;\n"
+        "  curr := next;\n"
+        "  i := i + 1;\n"
+        "}\n";
+
     runFullChainTest("FIZZBUZZ (Вложенные IF)", fizzBuzzCode);
     runFullChainTest("БАЗОВАЯ МАТЕМАТИКА", mathBasicCode);
     runFullChainTest("ТОЖДЕСТВО И ТОЧНОСТЬ", mathIdentityCode);
@@ -205,6 +286,13 @@ int main() {
     runFullChainTest("Решето Эратосфена", sieveCode);
     runFullChainTest("Приоритет вычислений в индексах", complexIndexCode);
     runFullChainTest("Вложенные массивы", nestedMatrixCode);
+
+    runFullChainTest("Приоритеты операций", mathPriorityCode);
+    runFullChainTest("Тангенсы и Котангенсы", trigExtraCode);
+    runFullChainTest("Сложная логика", logicStressCode);
+    runFullChainTest("Смена типов переменных", typeMorphCode);
+    runFullChainTest("Глубокая индексация", deepArrayCode);
+    runFullChainTest("Числа Фибоначчи", fibCode);
 
 }
 

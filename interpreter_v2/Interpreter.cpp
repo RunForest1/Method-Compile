@@ -170,16 +170,21 @@ void Interpreter::executeOperator(const std::string& op) {
         stack.push(finalAddr);
     }
     else if (op == "INDEX2") {
-        // 1. Извлекаем второй индекс [j]
+        // Извлекаем второй индекс [j] и резолвим его в число
         Value idxVal2 = resolve(pop());
         int idx2 = (idxVal2.type == ValueType::FLOAT) ? (int)idxVal2.f_val : idxVal2.i_val;
 
-        // 2. Извлекаем то, что пришло от INDEX1 (уже строка "matrix[i]")
-        Value arrayWithFirstIdx = pop(); 
+        // Извлекаем первый индекс [i] и резолвим его в число
+        Value idxVal1 = resolve(pop());
+        int idx1 = (idxVal1.type == ValueType::FLOAT) ? (int)idxVal1.f_val : idxVal1.i_val;
+
+        //  Извлекаем базу массива (ADDR(matrix))
+        Value array = pop(); 
         
-        // 3. Доклеиваем второй индекс: "matrix[i]" + "[j]" -> "matrix[i][j]"
-        Value finalAddr(arrayWithFirstIdx.s_val + "[" + std::to_string(idx2) + "]");
+        // Склеиваем в формате matrix[idx1, idx2]
+        Value finalAddr(array.s_val + "[" + std::to_string(idx1) + ", " + std::to_string(idx2) + "]");
         finalAddr.type = ValueType::ADDRESS;
+        
         stack.push(finalAddr);
     }
     else if (op == "SIN") {
@@ -191,6 +196,22 @@ void Interpreter::executeOperator(const std::string& op) {
         Value val = resolve(pop());
         double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
         stack.push(Value(manual_cos(x)));
+    }
+    else if (op == "TAN") {
+        Value val = resolve(pop());
+        double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
+        double s = manual_sin(x);
+        double c = manual_cos(x);
+        if (c == 0) throw std::runtime_error("Math error: Tangent undefined (cos is 0)");
+        stack.push(Value(s / c));
+    }
+    else if (op == "CTAN") {
+        Value val = resolve(pop());
+        double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
+        double s = manual_sin(x);
+        double c = manual_cos(x);
+        if (s == 0) throw std::runtime_error("Math error: Cotangent undefined (sin is 0)");
+        stack.push(Value(c / s));
     }
     else if (op == "EXP") {
         Value val = resolve(pop());

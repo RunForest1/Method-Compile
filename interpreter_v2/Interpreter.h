@@ -8,7 +8,7 @@
 #include "Value.h"
 
 const double PI = 3.14159265358979323846;
-const int ITERATIONS = 100; // Количество итераций для точности
+const int ITERATIONS = 200; // Количество итераций для точности
 
 class Interpreter {
 public:
