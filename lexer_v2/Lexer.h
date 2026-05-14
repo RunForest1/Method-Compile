@@ -69,7 +69,7 @@ private:
     const std::set<std::string> keywords = {
         "if", "then", "else", "while", "do",
         "read", "write", "int", "float", 
-        "sin", "cos", "tanh", "ctanh", "log", "exp", "power", 
+        "sin", "cos", "tan", "ctan", "log", "exp", "power", 
     };
 };
 

@@ -39,6 +39,10 @@ int Parser::getExtendedType(const Lexem &l)
             return 1011;
         if (l.value == "log")
             return 1012;
+        if (l.value == "tan")
+            return 1013;
+        if (l.value == "ctan")
+            return 1014;
     }
     if (l.type == LexemType::L_DELIMITER)
     {
@@ -190,8 +194,7 @@ void Parser::initMatrix()
 
     std::vector<LexemType> firstFactor = {
         ID, INT, FLOAT, STRING, LPAR, ADD_OP,
-        (LexemType)1008, (LexemType)1009, (LexemType)1010, (LexemType)1011, (LexemType)1012 // sin, cos, exp, power, log
-    };
+        (LexemType)1008, (LexemType)1009, (LexemType)1010, (LexemType)1011, (LexemType)1012, (LexemType)1013, (LexemType)1014};
     // --- 5. Expression & Term ---
     for (auto t : firstFactor)
     {
@@ -334,7 +337,7 @@ void Parser::initMatrix()
         {SymbolType::TERMINAL, 2002},
         {SymbolType::SEMANTIC_ACTION, "POW"}};
 
-    for (auto t : {(LexemType)1008, (LexemType)1009, (LexemType)1010, (LexemType)1012})
+    for (auto t : {(LexemType)1008, (LexemType)1009, (LexemType)1010, (LexemType)1012, (LexemType)1013, (LexemType)1014})
     {
         M[NonTerm::Factor][t] = {{SymbolType::NON_TERMINAL, (int)NonTerm::MathFunction}};
 
@@ -345,8 +348,12 @@ void Parser::initMatrix()
             action = "COS";
         else if (t == (LexemType)1010)
             action = "EXP";
-        else
+        else if (t == (LexemType)1012)
             action = "LOG";
+        else if (t == (LexemType)1013)
+            action = "TAN";
+        else if (t == (LexemType)1014)
+            action = "CTAN";
 
         M[NonTerm::MathFunction][t] = {
             {SymbolType::TERMINAL, (int)t},
@@ -493,13 +500,16 @@ void Parser::initSemanticTable()
     semanticActions["COS"] = [this]()
     { rpn.push_back({RpnElementType::OPERATOR, "COS"}); };
     semanticActions["EXP"] = [this]()
-    { rpn.push_back({RpnElementType::OPERATOR, "EXP"}); }; 
+    { rpn.push_back({RpnElementType::OPERATOR, "EXP"}); };
     semanticActions["LOG"] = [this]()
     { rpn.push_back({RpnElementType::OPERATOR, "LOG"}); };
     semanticActions["POW"] = [this]()
     { rpn.push_back({RpnElementType::OPERATOR, "POW"}); };
+    semanticActions["TAN"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "TAN"}); };
+    semanticActions["CTAN"] = [this]()
+    { rpn.push_back({RpnElementType::OPERATOR, "CTAN"}); };
 
-    // Добавьте эти строки:
     semanticActions["INDEX1"] = [this]()
     {
         rpn.push_back({RpnElementType::OPERATOR, "INDEX1"});

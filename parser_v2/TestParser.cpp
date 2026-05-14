@@ -104,7 +104,17 @@ int main()
                   "b := exp(1) * log(100); \n"
                   "c := power(2, 3); \n"
                   "d := sin(cos(exp(x))); \n"
-                  "res := power(a + b, sin(c) * 2);\n");
+                  "res := power(a + b, sin(c) * 2);\n"
+                  "val1 := tan(x);\n"
+                  "val2 := ctan(y + 1);\n");
+                  
+    runParserTest("ВЛОЖЕННОСТЬ И МНОГОМЕРНОСТЬ МАССИВОВ",
+                  "// 1. Двумерный массив (через запятую)\n"
+                  "matrix[i, j] := 10; \n"
+                  "// 2. Вложенный индекс (массив внутри индекса)\n"
+                  "value := arr[index[k]]; \n"
+                  "// 3. Сложная комбинация\n"
+                  "res := table[arr[i], sin(j)];\n");
 
     return 0;
 }
