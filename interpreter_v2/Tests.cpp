@@ -1,185 +1,211 @@
-#include "Interpreter.h"
 #include <iostream>
 #include <vector>
+#include <string>
+#include <iomanip>
+#include <sstream>
+
+// Подключаем все компоненты твоего транслятора
+#include "Interpreter.h"       // Этот лежит в той же папке
+#include "value.h"             // И этот тоже
+#include "../lexer_v2/Lexer.h"
+#include "../parser_v2/Parser.h"
+#include "../parser_v2/Rpn.h"
 
 #ifdef _WIN32
     #include <windows.h>
 #endif
-
 void FixLocale(){
     SetConsoleOutputCP(CP_UTF8);  // Enable UTF-8 output
     SetConsoleCP(CP_UTF8);         // Enable UTF-8 input (optional)
 }
 
-RPNItem make(RPNItemType t, const std::string& v, int l=1, int c=1) { return {t, v, l, c}; }
-
-void Test1_Formula() {
-    std::cout << "--- ТЕСТ 1: Сложная формула (дискриминант: D = b*b - 4*a*c) ---\n";
-    Interpreter interp;
-    
-    // a := 1; b := 5; c := 6; D := b*b - 4*a*c; write D;
-    std::vector<RPNItem> rpn = {
-        make(RPNItemType::VARIABLE, "a"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "b"), make(RPNItemType::LITERAL, "5"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "c"), make(RPNItemType::LITERAL, "6"), make(RPNItemType::ASSIGN, ":="),
-        
-        make(RPNItemType::VARIABLE, "D"), 
-        make(RPNItemType::VARIABLE, "b"), make(RPNItemType::VARIABLE, "b"), make(RPNItemType::OPERATOR, "*"),
-        make(RPNItemType::LITERAL, "4"), make(RPNItemType::VARIABLE, "a"), make(RPNItemType::OPERATOR, "*"),
-        make(RPNItemType::VARIABLE, "c"), make(RPNItemType::OPERATOR, "*"),
-        make(RPNItemType::OPERATOR, "-"), make(RPNItemType::ASSIGN, ":="),
-        
-        make(RPNItemType::VARIABLE, "D"), make(RPNItemType::WRITE, "w")
-    };
-    interp.execute(rpn);
-    std::cout << "Ожидалось: 1. Успех.\n\n";
-}
-
-void Test2_ArraySort() {
-    std::cout << "--- ТЕСТ 2: Bubble Sort (5 элементов) ---\n";
-    Interpreter interp;
-    
-    std::vector<RPNItem> rpn = {
-        // [0-2]: n := 5
-        make(RPNItemType::VARIABLE, "n"), make(RPNItemType::LITERAL, "5"), make(RPNItemType::ASSIGN, ":="),
-        
-        // [3-5]: arr m1 n
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "n"), make(RPNItemType::ALLOC_1D, "m1"),
-        
-        // [6-30]: Заполнение (30, 10, 5, 20, -40)
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "0"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::LITERAL, "30"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::LITERAL, "10"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "2"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::LITERAL, "5"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "3"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::LITERAL, "20"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "4"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::LITERAL, "-40"), make(RPNItemType::ASSIGN, ":="),
-        
-        // [31-33]: i := 0
-        make(RPNItemType::VARIABLE, "i"), make(RPNItemType::LITERAL, "0"), make(RPNItemType::ASSIGN, ":="),
-        
-        // --- LOOP OUTER --- (Индекс 34)
-        make(RPNItemType::VARIABLE, "i"), make(RPNItemType::VARIABLE, "n"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "-"), make(RPNItemType::OPERATOR, "<"), 
-        make(RPNItemType::LABEL, "99"), make(RPNItemType::JF, "jf"), // END_OUTER -> 99
-        
-        // [41-43]: j := 0
-        make(RPNItemType::VARIABLE, "j"), make(RPNItemType::LITERAL, "0"), make(RPNItemType::ASSIGN, ":="),
-        
-        // --- LOOP INNER --- (Индекс 44)
-        make(RPNItemType::VARIABLE, "j"), make(RPNItemType::VARIABLE, "n"), make(RPNItemType::VARIABLE, "i"), make(RPNItemType::OPERATOR, "-"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "-"), make(RPNItemType::OPERATOR, "<"),
-        make(RPNItemType::LABEL, "92"), make(RPNItemType::JF, "jf"), // END_INNER -> 92
-        
-        // if arr[j] > arr[j+1]
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::ARRAY_IDX_1D, "i"),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "+"), make(RPNItemType::ARRAY_IDX_1D, "i"),
-        make(RPNItemType::OPERATOR, ">"),
-        make(RPNItemType::LABEL, "85"), make(RPNItemType::JF, "jf"), // NO_SWAP -> 85
-        
-        // SWAP (t := arr[j]; arr[j] := arr[j+1]; arr[j+1] := t)
-        make(RPNItemType::VARIABLE, "t"), make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "+"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "+"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::VARIABLE, "t"), make(RPNItemType::ASSIGN, ":="),
-        
-        // NO_SWAP (Индекс 85): j := j + 1
-        make(RPNItemType::VARIABLE, "j"), make(RPNItemType::VARIABLE, "j"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "+"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::LABEL, "44"), make(RPNItemType::JMP, "j"), // jump INNER
-        
-        // END_INNER (Индекс 92): i := i + 1
-        make(RPNItemType::VARIABLE, "i"), make(RPNItemType::VARIABLE, "i"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::OPERATOR, "+"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::LABEL, "34"), make(RPNItemType::JMP, "j"), // jump OUTER
-        
-        // END_OUTER (Индекс 99): вывод 5 элементов
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "0"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::WRITE, "w"),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::WRITE, "w"),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "2"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::WRITE, "w"),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "3"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::WRITE, "w"),
-        make(RPNItemType::VARIABLE, "arr"), make(RPNItemType::LITERAL, "4"), make(RPNItemType::ARRAY_IDX_1D, "i"), make(RPNItemType::WRITE, "w")
-    };
-
-    interp.execute(rpn);
-    std::cout << "Ожидалось: -40 5 10 20 30. Успех!\n";
-}
-
-void Test3_Errors() {
-    std::cout << "--- ТЕСТ 3: Диагностика ошибок ---\n";
-    Interpreter interp;
-    
-    // res := 10 / 0; (ошибка: строка 2, символ 15)
-    std::vector<RPNItem> rpn = {
-        make(RPNItemType::VARIABLE, "res", 2, 1), make(RPNItemType::LITERAL, "10", 2, 8), 
-        make(RPNItemType::LITERAL, "0", 2, 12), make(RPNItemType::OPERATOR, "/", 2, 15), 
-        make(RPNItemType::ASSIGN, ":=", 2, 17)
-    };
-    
-    try {
-        interp.execute(rpn);
-    } catch (const std::exception& e) {
-        std::cout << "Тест пройден: Ошибка успешно отловлена с координатами.\n\n";
+/**
+ * Вспомогательная функция для красивого вывода ОПЗ (для отладки)
+ */
+void printRpnDebug(const std::vector<RpnElement> &rpn) {
+    std::cout << "--- Сгенерированная ОПЗ ---" << std::endl;
+    for (size_t i = 0; i < rpn.size(); ++i) {
+        std::cout << std::setw(3) << i << ": ";
+        switch (rpn[i].type) {
+            case RpnElementType::ADDR_VAR:  std::cout << "ADDR(" << rpn[i].value << ")"; break;
+            case RpnElementType::CONST_VAL: std::cout << "CONST(" << rpn[i].value << ")"; break;
+            case RpnElementType::OPERATOR:  std::cout << "OP(" << rpn[i].value << ")"; break;
+            case RpnElementType::LABEL:     std::cout << "LBL(" << rpn[i].value << ")"; break;
+        }
+        std::cout << std::endl;
     }
+    std::cout << "---------------------------" << std::endl;
 }
 
-void Test4_2DArraysAndStrings() {
-    std::cout << "--- ТЕСТ 4: 2D Массивы (m2, i2) и строки ---\n";
-    Interpreter interp;
-    
-    // str := 'Hello'; m2(matrix, 2, 2); matrix[1, 1] := 99; write str; write matrix[1, 1];
-    std::vector<RPNItem> rpn = {
-        make(RPNItemType::VARIABLE, "str"), make(RPNItemType::LITERAL, "'Hello'"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "matrix"), make(RPNItemType::LITERAL, "2"), make(RPNItemType::LITERAL, "2"), make(RPNItemType::ALLOC_2D, "m2"),
-        make(RPNItemType::VARIABLE, "matrix"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::ARRAY_IDX_2D, "i2"), make(RPNItemType::LITERAL, "99"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "str"), make(RPNItemType::WRITE, "w"),
-        make(RPNItemType::VARIABLE, "matrix"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::LITERAL, "1"), make(RPNItemType::ARRAY_IDX_2D, "i2"), make(RPNItemType::WRITE, "w")
-    };
-    
-    interp.execute(rpn);
-    std::cout << "Ожидалось: Hello 99. Успех.\n\n";
-}
+/**
+ * Функция запуска полной цепочки: Код -> Лексер -> Парсер -> Интерпретатор
+ */
+void runFullChainTest(const std::string &testName, const std::string &source) {
+    std::cout << "\n" << std::string(60, '=') << std::endl;
+    std::cout << "ТЕСТ: " << testName << std::endl;
+    std::cout << std::string(60, '=') << std::endl;
+    std::cout << "ИСХОДНЫЙ КОД:\n" << source << std::endl;
+    std::cout << std::string(60, '-') << std::endl;
 
-void Test5_InputOutput() {
-    std::cout << "--- ТЕСТ 5: Ввод и вывод данных (Интерактивный) ---\n";
-    std::cout << "(Сейчас интерпретатор попросит вас ввести данные)\n";
-    Interpreter interp;
-    
-    // Псевдокод:
-    // msg1 := 'Enter_number:'; 
-    // write msg1;
-    // read x;
-    // res := x * 10;
-    // msg2 := 'Result(x*10):'; 
-    // write msg2;
-    // write res;
-    
-    std::vector<RPNItem> rpn = {
-        // Вывод приглашения
-        make(RPNItemType::VARIABLE, "msg1"), make(RPNItemType::LITERAL, "'Enter_number:'"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "msg1"), make(RPNItemType::WRITE, "w"),
-        
-        // Ввод переменной x с клавиатуры
-        make(RPNItemType::VARIABLE, "x"), make(RPNItemType::READ, "r"),
-        
-        // Вычисление res = x * 10
-        make(RPNItemType::VARIABLE, "res"), make(RPNItemType::VARIABLE, "x"), make(RPNItemType::LITERAL, "10"), make(RPNItemType::OPERATOR, "*"), make(RPNItemType::ASSIGN, ":="),
-        
-        // Вывод строки с результатом
-        make(RPNItemType::VARIABLE, "msg2"), make(RPNItemType::LITERAL, "'Result(x*10):'"), make(RPNItemType::ASSIGN, ":="),
-        make(RPNItemType::VARIABLE, "msg2"), make(RPNItemType::WRITE, "w"),
-        
-        // Вывод самого значения res
-        make(RPNItemType::VARIABLE, "res"), make(RPNItemType::WRITE, "w")
-    };
+    try {
+        // 1. Лексический и синтаксический анализ + генерация ОПЗ
+        std::cout << "[1/3] Компиляция (Лексер + Парсер)..." << std::endl;
+        Lexer lexer(source);
+        Parser parser(lexer);
+        std::vector<RpnElement> rpn = parser.parse();
+        std::cout << ">>> Компиляция завершена успешно." << std::endl;
 
-    interp.execute(rpn);
-    std::cout << "Тест 5 успешно завершен.\n\n";
+        // Вывод ОПЗ для контроля
+        printRpnDebug(rpn);
+
+        // 2. Инициализация интерпретатора
+        std::cout << "[2/3] Инициализация интерпретатора..." << std::endl;
+        Interpreter interpreter(rpn);
+
+        // 3. Выполнение
+        std::cout << "[3/3] Запуск выполнения..." << std::endl;
+        std::cout << "--- ВЫВОД ПРОГРАММЫ ---" << std::endl;
+        
+        interpreter.run();
+        
+        std::cout << "--- КОНЕЦ ВЫВОДА ---" << std::endl;
+        std::cout << ">>> Выполнение успешно завершено." << std::endl;
+
+    } catch (const std::exception &e) {
+        // Ловим ошибки на любом из этапов
+        std::cerr << "\n[!] КРИТИЧЕСКАЯ ОШИБКА: " << e.what() << std::endl;
+    }
+
+    std::cout << std::string(60, '=') << std::endl;
 }
 
 int main() {
-
     FixLocale();
 
-    try {
-        Test1_Formula();
-        Test2_ArraySort();
-        Test3_Errors();
-        Test4_2DArraysAndStrings();
-        Test5_InputOutput();
-    } catch (...) {}
-    return 0;
+    // --- ТЕСТ 1: Базовые математические функции ---
+    std::string mathBasicCode = 
+        "a := sin(0);\n"          // Ожидаем 0.0
+        "b := cos(0);\n"          // Ожидаем 1.0
+        "c := exp(1);\n"          // Ожидаем ~2.71828
+        "d := log(2.718281828);\n" // Ожидаем ~1.0
+        "e := power(2, 3);\n"     // Ожидаем 8.0
+        "write('--- Basic Math ---');\n"
+        "write(a); write(b); write(c); write(d); write(e);\n";
+
+    // --- ТЕСТ 2: Тригонометрическое тождество (sin^2 + cos^2 = 1) ---
+    // Проверяем точность рядов Тейлора и работу вложенных вызовов
+    std::string mathIdentityCode = 
+        "angle := 0.5;\n"
+        "s := sin(angle);\n"
+        "c := cos(angle);\n"
+        "res := power(s, 2) + power(c, 2);\n"
+        "write('--- Identity (sin^2 + cos^2) ---');\n"
+        "write(res);\n"; // Должно быть максимально близко к 1.0
+
+    // --- ТЕСТ 3: Сложные вложенные вычисления и унарный минус ---
+    // Вычисляем: -exp(sin(PI/2)) -> -exp(1) -> -2.71828
+    std::string mathComplexCode = 
+        "pi := 3.14159265;\n"
+        "val := -exp(sin(pi / 2));\n" 
+        "write('--- Complex Nesting & NEG ---');\n"
+        "write(val);\n";
+
+    // --- ТЕСТ 4: Работа с отрицательными числами и типами ---
+    std::string mathTypeTest = 
+        "x := 10.5 - 5;\n"       // Float - Int
+        "y := power(2.0, -2);\n" // 2^-2 = 0.25 (если реализовал логарифм для отрицательных e)
+        "write('--- Types & Fractions ---');\n"
+        "write(x);\n"
+        "write(y);\n";
+
+    // --- ТЕСТ 5: fizz Buzz ---
+    std::string fizzBuzzCode = 
+        "n := 15;\n"
+        "i := 1;\n"
+        "while i <= n do {\n"
+        "  if (i / 3) * 3 == i then {\n"
+        "    if (i / 5) * 5 == i then {\n"
+        "      write('FizzBuzz');\n"
+        "    } else {\n"
+        "      write('Fizz');\n"
+        "    }\n"
+        "  } else {\n"
+        "    if (i / 5) * 5 == i then {\n"
+        "      write('Buzz');\n"
+        "    } else {\n"
+        "      write(i);\n"
+        "    }\n"
+        "  }\n"
+        "  i := i + 1;\n"
+        "}\n";
+    
+    // Решето Эратосфена
+    std::string sieveCode = 
+        "limit := 20;\n"
+        "n := 2;\n"
+        "while n <= limit do {\n"
+        "  isprime[n] := 1;\n"
+        "  n := n + 1;\n"
+        "}\n"
+        "p := 2;\n"
+        "while p * p <= limit do {\n"
+        "  if isprime[p] == 1 then {\n"
+        "    step := p * p;\n"
+        "    while step <= limit do {\n"
+        "      isprime[step] := 0;\n"
+        "      step := step + p;\n"
+        "    }\n"
+        "  }\n"
+        "  p := p + 1;\n"
+        "}\n"
+        "write('Primes up to 20 (expected: 2, 3, 5, 7, 11, 13, 17, 19):');\n"
+        "k := 2;\n"
+        "while k <= limit do {\n"
+        "  if isprime[k] == 1 then { write(k); }\n"
+        "  k := k + 1;\n"
+        "}\n";  
+        
+    // Приоритет вычислений в индексах
+    std::string complexIndexCode = 
+        "base := 1;\n"
+        "arr[base + 1] := 999;\n" // arr[2] := 999
+        "idx := sin(0) + 2;\n"    // idx := 2.0
+        "write('Complex Index (expected 999):');\n"
+        "write(arr[idx]);\n";
+
+    // Тест на вложенные массивы
+    std::string nestedMatrixCode = 
+        "i := 0;\n"
+        "while i < 2 do {\n"
+        "    j := 0;\n"
+        "    while j < 2 do {\n"
+        "        matrix[i, j] := i + j;\n"
+        "        j := j + 1;\n"
+        "    }\n"
+        "    i := i + 1;\n"
+        "}\n"
+        "write('Matrix element [1, 1] (expected 2):');\n"
+        "write(matrix[1, 1]);\n"
+        "indices[0] := 1;\n"
+        "indices[1] := 0;\n"
+        "val := matrix[indices[0], indices[1]];\n"
+        "write('Complex nested access [1, 0] (expected 1):');\n"
+        "write(val);\n"
+        "a := 1;\n"
+        "matrix[matrix[0, a], indices[0]] := 888;\n"
+        "write('After recursive write [1, 1] (expected 888):');\n"
+        "write(matrix[1, 1]);\n";
+
+    runFullChainTest("FIZZBUZZ (Вложенные IF)", fizzBuzzCode);
+    runFullChainTest("БАЗОВАЯ МАТЕМАТИКА", mathBasicCode);
+    runFullChainTest("ТОЖДЕСТВО И ТОЧНОСТЬ", mathIdentityCode);
+    runFullChainTest("ВЛОЖЕННОСТЬ И УНАРНЫЙ МИНУС", mathComplexCode);
+    runFullChainTest("ТИПЫ ДАННЫХ", mathTypeTest);
+
+    runFullChainTest("Решето Эратосфена", sieveCode);
+    runFullChainTest("Приоритет вычислений в индексах", complexIndexCode);
+    runFullChainTest("Вложенные массивы", nestedMatrixCode);
+
 }
+
+//g++ interpreter_v2/Tests.cpp interpreter_v2/Interpreter.cpp interpreter_v2/value.cpp lexer_v2/Lexer.cpp lexer_v2/Lexem.cpp parser_v2/Parser.cpp -I./lexer_v2 -I./parser_v2 -I./interpreter_v2 -o interpreter_v2\compiler_test 

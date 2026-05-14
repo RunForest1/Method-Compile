@@ -107,14 +107,28 @@ int main()
                   "res := power(a + b, sin(c) * 2);\n"
                   "val1 := tan(x);\n"
                   "val2 := ctan(y + 1);\n");
-                  
+
     runParserTest("ВЛОЖЕННОСТЬ И МНОГОМЕРНОСТЬ МАССИВОВ",
-                  "// 1. Двумерный массив (через запятую)\n"
-                  "matrix[i, j] := 10; \n"
-                  "// 2. Вложенный индекс (массив внутри индекса)\n"
-                  "value := arr[index[k]]; \n"
-                  "// 3. Сложная комбинация\n"
-                  "res := table[arr[i], sin(j)];\n");
+                  "i := 0;\n"
+                  "while i < 2 do {\n"
+                  "    j := 0;\n"
+                  "    while j < 2 do {\n"
+                  "        matrix[i, j] := i + j;\n"
+                  "        j := j + 1;\n"
+                  "    }\n"
+                  "    i := i + 1;\n"
+                  "}\n"
+                  "write('Matrix element [1, 1] (expected 2):');\n"
+                  "write(matrix[1, 1]);\n"
+                  "indices[0] := 1;\n"
+                  "indices[1] := 0;\n"
+                  "val := matrix[indices[0], indices[1]];\n"
+                  "write('Complex nested access [1, 0] (expected 1):');\n"
+                  "write(val);\n"
+                  "a := 1;\n"
+                  "matrix[matrix[0, a], indices[0]] := 888;\n"
+                  "write('After recursive write [1, 1] (expected 888):');\n"
+                  "write(matrix[1, 1]);\n");
 
     return 0;
 }

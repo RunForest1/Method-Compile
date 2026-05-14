@@ -1,257 +1,266 @@
 #include "Interpreter.h"
+#include <iostream>
+#include <stdexcept>
 
-void Interpreter::throwError(const std::string& msg, const RPNItem& item) const {
-    std::cerr << "Ошибка выполнения (Строка: " << item.line 
-              << ", Символ: " << item.column << "): " << msg << std::endl;
-    throw std::runtime_error(msg);
-}
+Interpreter::Interpreter(const std::vector<RpnElement>& code) : rpn(code) {}
 
-StackItem Interpreter::popStack(const RPNItem& item) {
-    if (stack.empty()) throwError("Магазин пуст. Недостаточно операндов.", item);
-    StackItem top = stack.top();
-    stack.pop();
-    return top;
-}
-
-// Разыменование: если в магазине ссылка, получаем её числовое/строковое значение
-Value Interpreter::getValue(const StackItem& item, const RPNItem& opItem) {
-    if (item.type == StackItemType::VALUE) {
-        return item.val;
-    } else if (item.type == StackItemType::VAR_REF) {
-        if (variables.find(item.varName) == variables.end()) {
-            // Инициализация по умолчанию при первом чтении
-            variables[item.varName] = Value{DataType::INT, 0, 0.0, "", false};
-        }
-        return variables[item.varName];
-    } else if (item.type == StackItemType::ARRAY_ELEM_REF) {
-        if (arrays.find(item.varName) == arrays.end()) throwError("Массив не существует", opItem);
-        return arrays[item.varName].data[item.arrayIndex];
+// Вычисление exp
+double manual_exp(double x) {
+    double res = 1.0;
+    double term = 1.0;
+    for (int i = 1; i <= ITERATIONS; ++i) {
+        term *= x / i;
+        res += term;
+        if (term < 1e-15 && term > -1e-15) break;
     }
-    return Value{};
+    return res;
 }
 
-void Interpreter::castToCommon(Value& v1, Value& v2) {
-    if (v1.type == DataType::FLOAT && v2.type == DataType::INT) {
-        v2.type = DataType::FLOAT; v2.f_val = static_cast<double>(v2.i_val);
-    } else if (v1.type == DataType::INT && v2.type == DataType::FLOAT) {
-        v1.type = DataType::FLOAT; v1.f_val = static_cast<double>(v1.i_val);
+// Вычисление sin
+double manual_sin(double x) {
+    // Приведение угла к диапазону [-PI, PI]
+    while (x > PI) x -= 2 * PI;
+    while (x < -PI) x += 2 * PI;
+
+    double res = x;
+    double term = x;
+    for (int i = 1; i <= ITERATIONS; ++i) {
+        term *= -x * x / ((2 * i) * (2 * i + 1));
+        res += term;
+        if (term < 1e-15 && term > -1e-15) break;
     }
+    return res;
 }
 
-Value Interpreter::getVariableValue(const std::string& name) {
-    return variables[name];
+// Вычисление cos
+double manual_cos(double x) {
+    while (x > PI) x -= 2 * PI;
+    while (x < -PI) x += 2 * PI;
+
+    double res = 1.0;
+    double term = 1.0;
+    for (int i = 1; i <= ITERATIONS; ++i) {
+        term *= -x * x / ((2 * i - 1) * (2 * i));
+        res += term;
+        if (term < 1e-15 && term > -1e-15) break;
+    }
+    return res;
 }
 
-void Interpreter::execute(const std::vector<RPNItem>& rpn) {
+// Вычисление log
+double manual_log(double x) {
+    if (x <= 0) throw std::runtime_error("Math error: log of non-positive number");
+    
+    // Используем метод итераций для ln(x) через y = (x-1)/(x+1)
+    double y = (x - 1) / (x + 1);
+    double y2 = y * y;
+    double res = 0;
+    double term = y;
+    
+    for (int i = 0; i < ITERATIONS; ++i) {
+        res += term / (2 * i + 1);
+        term *= y2;
+        if (term < 1e-15) break;
+    }
+    return 2.0 * res;
+}
+
+
+void Interpreter::run() {
     ip = 0;
     while (ip < rpn.size()) {
-        const auto& item = rpn[ip];
+        const auto& el = rpn[ip];
+        if (el.type == RpnElementType::CONST_VAL) {
+            if (el.value.find("'") != std::string::npos)
+                stack.push(Value(el.value.substr(1, el.value.size() - 2)));
+            else if (el.value.find(".") != std::string::npos)
+                stack.push(Value(std::stod(el.value)));
+            else
+                stack.push(Value(std::stoll(el.value)));
+        }
+        else if (el.type == RpnElementType::ADDR_VAR) {
+            Value addr(el.value);
+            addr.type = ValueType::ADDRESS;
+            stack.push(addr);
+        }
+        else if (el.type == RpnElementType::LABEL) {
+            std::string clean_label = el.value;
+            
+            // Если в value прилетает "LBL(21)", очистим до "21"
+            if (clean_label.find("(") != std::string::npos) {
+                size_t start = clean_label.find("(") + 1;
+                size_t end = clean_label.find(")");
+                clean_label = clean_label.substr(start, end - start);
+            }
+            
+            stack.push(Value(clean_label)); 
+        }
+        else if (el.type == RpnElementType::OPERATOR) {
+            executeOperator(el.value);
+        }
+        ip++;
+    }
+}
 
-        switch (item.type) {
-            case RPNItemType::LITERAL: {
-                Value val;
-                if (item.value[0] == '\'') {
-                    val.type = DataType::STRING;
-                    val.s_val = item.value.substr(1, item.value.length() - 2);
-                } else if (item.value.find('.') != std::string::npos) {
-                    val.type = DataType::FLOAT;
-                    val.f_val = std::stod(item.value);
-                } else {
-                    val.type = DataType::INT;
-                    val.i_val = std::stoi(item.value);
-                }
-                stack.push(StackItem{StackItemType::VALUE, val, "", -1});
-                ip++;
-                break;
-            }
-            case RPNItemType::LABEL: {
-                Value val; val.type = DataType::INT; val.i_val = std::stoi(item.value);
-                stack.push(StackItem{StackItemType::VALUE, val, "", -1});
-                ip++;
-                break;
-            }
-            case RPNItemType::VARIABLE: {
-                // Записываем ссылку на переменную в магазин
-                stack.push(StackItem{StackItemType::VAR_REF, Value{}, item.value, -1});
-                ip++;
-                break;
-            }
-            case RPNItemType::ASSIGN: {
-                Value rightVal = getValue(popStack(item), item);
-                StackItem leftRef = popStack(item);
-                
-                if (leftRef.type == StackItemType::VAR_REF) {
-                    variables[leftRef.varName] = rightVal;
-                } else if (leftRef.type == StackItemType::ARRAY_ELEM_REF) {
-                    arrays[leftRef.varName].data[leftRef.arrayIndex] = rightVal;
-                } else {
-                    throwError("Левый операнд присваивания должен быть ссылкой", item);
-                }
-                ip++;
-                break;
-            }
-            case RPNItemType::OPERATOR: {
-                if (item.value == "<" || item.value == ">" || item.value == "<=" || 
-                    item.value == ">=" || item.value == "==" || item.value == "!=") {
-                    evaluateLogic(item.value, item);
-                } else {
-                    evaluateMath(item.value, item);
-                }
-                ip++;
-                break;
-            }
-            case RPNItemType::JMP: { // j
-                Value label = getValue(popStack(item), item);
-                ip = label.i_val;
-                break;
-            }
-            case RPNItemType::JF: { // jf
-                Value label = getValue(popStack(item), item);
-                Value condition = getValue(popStack(item), item);
-                
-                if (!condition.b_val) ip = label.i_val; // Переход по лжи
-                else ip++;
-                break;
-            }
-            case RPNItemType::ALLOC_1D: { // m1
-                Value size = getValue(popStack(item), item);
-                StackItem arrayRef = popStack(item);
-                if (size.i_val <= 0) throwError("Неверный размер массива", item);
-                
-                arrays[arrayRef.varName] = ArrayPassport{size.i_val, 0, false, std::vector<Value>(size.i_val)};
-                ip++;
-                break;
-            }
-            case RPNItemType::ALLOC_2D: { // m2
-                Value cols = getValue(popStack(item), item);
-                Value rows = getValue(popStack(item), item);
-                StackItem arrayRef = popStack(item);
-                
-                int totalSize = rows.i_val * cols.i_val;
-                if (totalSize <= 0) throwError("Неверные размеры 2D массива", item);
-                
-                arrays[arrayRef.varName] = ArrayPassport{rows.i_val, cols.i_val, true, std::vector<Value>(totalSize)};
-                ip++;
-                break;
-            }
-            case RPNItemType::ARRAY_IDX_1D: { // i
-                Value index = getValue(popStack(item), item);
-                StackItem arrayRef = popStack(item);
-                
-                if (arrays.find(arrayRef.varName) == arrays.end()) throwError("Массив не выделен", item);
-                if (index.i_val < 0 || index.i_val >= arrays[arrayRef.varName].dim1) 
-                    throwError("Выход за границы массива", item);
-                
-                // Записываем ссылку на элемент массива в магазин
-                stack.push(StackItem{StackItemType::ARRAY_ELEM_REF, Value{}, arrayRef.varName, index.i_val});
-                ip++;
-                break;
-            }
-            case RPNItemType::ARRAY_IDX_2D: { // i2
-                Value colIdx = getValue(popStack(item), item);
-                Value rowIdx = getValue(popStack(item), item);
-                StackItem arrayRef = popStack(item);
-                
-                ArrayPassport& p = arrays[arrayRef.varName];
-                if (rowIdx.i_val < 0 || rowIdx.i_val >= p.dim1 || colIdx.i_val < 0 || colIdx.i_val >= p.dim2)
-                    throwError("Выход за границы 2D массива", item);
-                
-                // Формула: k * m + j
-                int flatIndex = rowIdx.i_val * p.dim2 + colIdx.i_val;
-                stack.push(StackItem{StackItemType::ARRAY_ELEM_REF, Value{}, arrayRef.varName, flatIndex});
-                ip++;
-                break;
-            }
-            case RPNItemType::READ: { // r
-                StackItem varRef = popStack(item);
-                std::string input;
-                std::cin >> input;
-                Value val;
-                if (input.find('.') != std::string::npos) { val.type = DataType::FLOAT; val.f_val = std::stod(input); }
-                else { val.type = DataType::INT; val.i_val = std::stoi(input); }
-                
-                if (varRef.type == StackItemType::VAR_REF) variables[varRef.varName] = val;
-                else if (varRef.type == StackItemType::ARRAY_ELEM_REF) arrays[varRef.varName].data[varRef.arrayIndex] = val;
-                ip++;
-                break;
-            }
-            case RPNItemType::WRITE: { // w
-                Value val = getValue(popStack(item), item);
-                if (val.type == DataType::INT) std::cout << val.i_val << " ";
-                else if (val.type == DataType::FLOAT) std::cout << val.f_val << " ";
-                else if (val.type == DataType::STRING) std::cout << val.s_val << " ";
-                else if (val.type == DataType::BOOL) std::cout << (val.b_val ? "true" : "false") << " ";
-                std::cout << "\n";
-                ip++;
-                break;
-            }
-            case RPNItemType::FUNCTION: {
-                evaluateFunction(item.value, item);
-                ip++;
-                break;
-            }
-            default: ip++; break;
+Value Interpreter::pop() {
+    if (stack.empty()) throw std::runtime_error("Stack underflow");
+    Value v = stack.top();
+    stack.pop();
+    return v;
+}
+
+Value Interpreter::resolve(Value v) {
+    if (v.type == ValueType::ADDRESS) {
+        if (memory.find(v.s_val) == memory.end()) return Value(0);
+        return memory[v.s_val];
+    }
+    return v;
+}
+
+void Interpreter::executeOperator(const std::string& op) {
+    if (op == ":=") {
+        Value val = resolve(pop());
+        Value addr = pop();
+        memory[addr.s_val] = val;
+    }
+    else if (op == "NEG") {
+        Value v = resolve(pop());
+        if (v.type == ValueType::FLOAT) stack.push(Value(-v.f_val));
+        else stack.push(Value(-v.i_val));
+    } 
+    else if (op == "WRITE") {
+        std::cout << resolve(pop()).toString() << std::endl;
+    } 
+    else if (op == "READ") {
+        Value addr = pop();
+        std::string input;
+        std::cin >> input;
+        try {
+            if (input.find('.') != std::string::npos) 
+                memory[addr.s_val] = Value(std::stod(input));
+            else 
+                memory[addr.s_val] = Value(std::stoll(input));
+        } catch (...) {
+            memory[addr.s_val] = Value(input);
         }
     }
-}
-
-void Interpreter::evaluateMath(const std::string& op, const RPNItem& item) {
-    Value right = getValue(popStack(item), item);
-    Value left = getValue(popStack(item), item);
-    castToCommon(left, right);
-    
-    Value res;
-    bool isFloat = (left.type == DataType::FLOAT);
-    
-    if (op == "+") {
-        if (left.type == DataType::STRING) { res.type = DataType::STRING; res.s_val = left.s_val + right.s_val; }
-        else if (isFloat) { res.type = DataType::FLOAT; res.f_val = left.f_val + right.f_val; }
-        else { res.type = DataType::INT; res.i_val = left.i_val + right.i_val; }
-    } else if (op == "-") {
-        if (isFloat) { res.type = DataType::FLOAT; res.f_val = left.f_val - right.f_val; }
-        else { res.type = DataType::INT; res.i_val = left.i_val - right.i_val; }
-    } else if (op == "*") {
-        if (isFloat) { res.type = DataType::FLOAT; res.f_val = left.f_val * right.f_val; }
-        else { res.type = DataType::INT; res.i_val = left.i_val * right.i_val; }
-    } else if (op == "/") {
-        if ((isFloat && right.f_val == 0.0) || (!isFloat && right.i_val == 0)) throwError("Деление на 0", item);
-        if (isFloat) { res.type = DataType::FLOAT; res.f_val = left.f_val / right.f_val; }
-        else { res.type = DataType::INT; res.i_val = left.i_val / right.i_val; }
+    else if (op == "J") {
+        ip = std::stoul(pop().s_val) - 1;
     }
-    stack.push(StackItem{StackItemType::VALUE, res, "", -1});
-}
+    else if (op == "JF") {
+        std::string label_val = pop().s_val;
+        size_t target = std::stoul(label_val);
 
-void Interpreter::evaluateLogic(const std::string& op, const RPNItem& item) {
-    Value right = getValue(popStack(item), item);
-    Value left = getValue(popStack(item), item);
-    castToCommon(left, right);
-    
-    Value res; res.type = DataType::BOOL;
-    bool isFloat = (left.type == DataType::FLOAT);
-    
-    if (op == "<") res.b_val = isFloat ? (left.f_val < right.f_val) : (left.i_val < right.i_val);
-    else if (op == ">") res.b_val = isFloat ? (left.f_val > right.f_val) : (left.i_val > right.i_val);
-    else if (op == "<=") res.b_val = isFloat ? (left.f_val <= right.f_val) : (left.i_val <= right.i_val);
-    else if (op == ">=") res.b_val = isFloat ? (left.f_val >= right.f_val) : (left.i_val >= right.i_val);
-    else if (op == "==") res.b_val = isFloat ? (left.f_val == right.f_val) : (left.i_val == right.i_val);
-    else if (op == "!=") res.b_val = isFloat ? (left.f_val != right.f_val) : (left.i_val != right.i_val);
-    
-    stack.push(StackItem{StackItemType::VALUE, res, "", -1});
-}
+        bool cond = resolve(pop()).toBool();
 
-void Interpreter::evaluateFunction(const std::string& func, const RPNItem& item) {
-    Value arg = getValue(popStack(item), item);
-    double val = (arg.type == DataType::FLOAT) ? arg.f_val : static_cast<double>(arg.i_val);
-    
-    Value res; res.type = DataType::FLOAT;
-    if (func == "sqrt") {
-        if (val < 0) throwError("Корень из отрицательного числа", item);
-        res.f_val = std::sqrt(val);
-    } else if (func == "exp") {
-        res.f_val = std::exp(val);
-    } else if (func == "log") {
-        if (val <= 0) throwError("Логарифм <= 0", item);
-        res.f_val = std::log(val);
+        if (!cond) ip = target - 1;
     }
-    stack.push(StackItem{StackItemType::VALUE, res, "", -1});
+    else if (op == "INDEX1") {
+        // 1. Извлекаем индекс и СРАЗУ резолвим его в значение
+        Value idxVal = resolve(pop()); 
+        // Получаем целое число независимо от того, FLOAT это или INT
+        int idx = (idxVal.type == ValueType::FLOAT) ? (int)idxVal.f_val : idxVal.i_val;
+
+        // 2. Извлекаем имя массива (ADDR)
+        Value array = pop(); 
+        
+        // 3. Склеиваем: "arr" + "[1]" -> "arr[1]"
+        Value finalAddr(array.s_val + "[" + std::to_string(idx) + "]");
+        finalAddr.type = ValueType::ADDRESS;
+        stack.push(finalAddr);
+    }
+    else if (op == "INDEX2") {
+        // 1. Извлекаем второй индекс [j]
+        Value idxVal2 = resolve(pop());
+        int idx2 = (idxVal2.type == ValueType::FLOAT) ? (int)idxVal2.f_val : idxVal2.i_val;
+
+        // 2. Извлекаем то, что пришло от INDEX1 (уже строка "matrix[i]")
+        Value arrayWithFirstIdx = pop(); 
+        
+        // 3. Доклеиваем второй индекс: "matrix[i]" + "[j]" -> "matrix[i][j]"
+        Value finalAddr(arrayWithFirstIdx.s_val + "[" + std::to_string(idx2) + "]");
+        finalAddr.type = ValueType::ADDRESS;
+        stack.push(finalAddr);
+    }
+    else if (op == "SIN") {
+        Value val = resolve(pop());
+        double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
+        stack.push(Value(manual_sin(x)));
+    }
+    else if (op == "COS") {
+        Value val = resolve(pop());
+        double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
+        stack.push(Value(manual_cos(x)));
+    }
+    else if (op == "EXP") {
+        Value val = resolve(pop());
+        double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
+        stack.push(Value(manual_exp(x)));
+    }
+    else if (op == "LOG") {
+        Value val = resolve(pop());
+        double x = (val.type == ValueType::FLOAT) ? val.f_val : (double)val.i_val;
+        stack.push(Value(manual_log(x)));
+    }
+    else if (op == "POW") {
+        // В ОПЗ порядок: Base, Exp, POW. 
+        //Извлечение для бинарной операции:
+        Value v_exp = resolve(pop());
+        Value v_base = resolve(pop());
+        
+        double b = (v_base.type == ValueType::FLOAT) ? v_base.f_val : (double)v_base.i_val;
+        double e = (v_exp.type == ValueType::FLOAT) ? v_exp.f_val : (double)v_exp.i_val;
+
+        // a^b = exp(b * ln(a))
+        if (b == 0 && e <= 0) throw std::runtime_error("Math error: 0^0 or 0^negative");
+        if (b < 0) throw std::runtime_error("Math error: negative base in POW");
+        
+        stack.push(Value(manual_exp(e * manual_log(b))));
+    }
+
+    else {
+        Value r = resolve(pop());
+        Value l = resolve(pop());
+        applyBinary(op, l, r);
+    }
+}
+
+void Interpreter::applyBinary(const std::string& op, Value l, Value r) {
+// Вспомогательная лямбда для получения double из любого значения
+    auto asDouble = [](const Value& v) {
+        return (v.type == ValueType::FLOAT) ? v.f_val : (double)v.i_val;
+    };
+
+    if (op == "+" || op == "-" || op == "*" || op == "/") {
+        if (l.type == ValueType::FLOAT || r.type == ValueType::FLOAT) {
+            // Считаем как числа с плавающей точкой
+            double dl = asDouble(l);
+            double dr = asDouble(r);
+            if (op == "+") stack.push(Value(dl + dr));
+            else if (op == "-") stack.push(Value(dl - dr));
+            else if (op == "*") stack.push(Value(dl * dr));
+            else if (op == "/") {
+                if (dr == 0) throw std::runtime_error("Division by zero");
+                stack.push(Value(dl / dr));
+            }
+        } else {
+            if (op == "+") stack.push(Value(l.i_val + r.i_val));
+            else if (op == "-") stack.push(Value(l.i_val - r.i_val));
+            else if (op == "*") stack.push(Value(l.i_val * r.i_val));
+            else if (op == "/") {
+                if (r.i_val == 0) throw std::runtime_error("Division by zero");
+                stack.push(Value(l.i_val / r.i_val));
+            }
+        }
+    }
+    else if (op == "<") stack.push(Value(asDouble(l) < asDouble(r)));
+    else if (op == ">") stack.push(Value(asDouble(l) > asDouble(r)));
+    
+    else if (op == "<=") stack.push(Value(asDouble(l) <= asDouble(r)));
+    else if (op == ">=") stack.push(Value(asDouble(l) >= asDouble(r))); 
+    else if (op == "==" || op == "=") stack.push(Value(asDouble(l) == asDouble(r)));
+    else if (op == "!=") stack.push(Value(asDouble(l) != asDouble(r)));
+    else {
+        throw std::runtime_error("Unknown binary operator: " + op);
+    }
 }
