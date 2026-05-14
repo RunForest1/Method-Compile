@@ -96,6 +96,13 @@
 | `<Factor>` | `L_INT` | k |
 | `<Factor>` | `L_FLOAT` | k |
 | `<Factor>` | `L_STRING` | k |
+| `<MathFunction>` | `L_KEYWORD('power') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ POW |
+| `<MathFunction>` | `L_KEYWORD('log') L_DELIMITER('(') <Expression> L_DELIMITER(',') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ $\Box$ LOG |
+| `<MathFunction>` | `L_KEYWORD('exp') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ EXP |
+| `<MathFunction>` | `L_KEYWORD('sin') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ SIN |
+| `<MathFunction>` | `L_KEYWORD('cos') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ COS |
+| `<MathFunction>` | `L_KEYWORD('tanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ TANH |
+| `<MathFunction>` | `L_KEYWORD('ctanh') L_DELIMITER('(') <Expression> L_DELIMITER(')') <SemanticTrigger>` | $\Box$ $\Box$ $\Box$ $\Box$ CTANH |
 | `<UnaryOperand>` | `L_DELIMITER('(') <Expression> L_DELIMITER(')')` | $\Box$ $\Box$ $\Box$ |
 | `<UnaryOperand>` | `L_ID <ArrayIndex>` | a $\Box$ |
 | `<UnaryOperand>` | `L_INT` | k |
