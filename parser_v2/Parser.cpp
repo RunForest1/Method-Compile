@@ -110,46 +110,119 @@ void Parser::initMatrix()
     // --- 2. Program & Statement ---
     for (auto t : {ID, IF, WHILE, READ, WRITE, LBRACE})
     {
-        M[NonTerm::Program][t] = {{SymbolType::NON_TERMINAL, (int)NonTerm::Statement}, {SymbolType::NON_TERMINAL, (int)NonTerm::Program}};
+        M[NonTerm::Program][t] = {
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Statement},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Program}};
     }
     for (auto t : {TERM, ELSE, RBRACE, SEMI})
         M[NonTerm::Program][t] = {};
 
-    M[NonTerm::Statement][WRITE] = {{SymbolType::TERMINAL, (int)WRITE}, {SymbolType::TERMINAL, (int)LPAR}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::SEMANTIC_ACTION, "w"}, {SymbolType::TERMINAL, (int)RPAR}, {SymbolType::TERMINAL, (int)SEMI}};
-    M[NonTerm::Statement][READ] = {{SymbolType::TERMINAL, (int)READ}, {SymbolType::TERMINAL, (int)LPAR}, {SymbolType::TERMINAL, (int)ID}, {SymbolType::SEMANTIC_ACTION, "a"}, {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}, {SymbolType::TERMINAL, (int)RPAR}, {SymbolType::SEMANTIC_ACTION, "r"}, {SymbolType::TERMINAL, (int)SEMI}};
-    M[NonTerm::Statement][IF] = {{SymbolType::TERMINAL, (int)IF}, {SymbolType::NON_TERMINAL, (int)NonTerm::Condition}, {SymbolType::SEMANTIC_ACTION, "1"}, {SymbolType::TERMINAL, (int)THEN}, {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}, {SymbolType::NON_TERMINAL, (int)NonTerm::ElsePart}, {SymbolType::SEMANTIC_ACTION, "3"}};
-    M[NonTerm::Statement][WHILE] = {{SymbolType::SEMANTIC_ACTION, "4"}, {SymbolType::TERMINAL, (int)WHILE}, {SymbolType::NON_TERMINAL, (int)NonTerm::Condition}, {SymbolType::SEMANTIC_ACTION, "1"}, {SymbolType::TERMINAL, (int)DO}, {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}, {SymbolType::SEMANTIC_ACTION, "5"}};
-    M[NonTerm::Statement][ID] = {{SymbolType::TERMINAL, (int)ID}, {SymbolType::SEMANTIC_ACTION, "a"}, {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}, {SymbolType::TERMINAL, (int)ASSIGN}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::SEMANTIC_ACTION, ":="}, {SymbolType::TERMINAL, (int)SEMI}};
-    M[NonTerm::Statement][LBRACE] = {{SymbolType::TERMINAL, (int)LBRACE}, {SymbolType::NON_TERMINAL, (int)NonTerm::Program}, {SymbolType::TERMINAL, (int)RBRACE}};
+    M[NonTerm::Statement][WRITE] = {
+        {SymbolType::TERMINAL, (int)WRITE},
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::SEMANTIC_ACTION, "w"},
+        {SymbolType::TERMINAL, (int)RPAR},
+        {SymbolType::TERMINAL, (int)SEMI}};
+    M[NonTerm::Statement][READ] = {
+        {SymbolType::TERMINAL, (int)READ},
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::SEMANTIC_ACTION, "a"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
+        {SymbolType::TERMINAL, (int)RPAR},
+        {SymbolType::SEMANTIC_ACTION, "r"},
+        {SymbolType::TERMINAL, (int)SEMI}};
+    M[NonTerm::Statement][IF] = {
+        {SymbolType::TERMINAL, (int)IF},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Condition},
+        {SymbolType::SEMANTIC_ACTION, "1"},
+        {SymbolType::TERMINAL, (int)THEN},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Statement},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ElsePart},
+        {SymbolType::SEMANTIC_ACTION, "3"}};
+    M[NonTerm::Statement][WHILE] = {
+        {SymbolType::SEMANTIC_ACTION, "4"},
+        {SymbolType::TERMINAL, (int)WHILE},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Condition},
+        {SymbolType::SEMANTIC_ACTION, "1"},
+        {SymbolType::TERMINAL, (int)DO},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Statement},
+        {SymbolType::SEMANTIC_ACTION, "5"}};
+    M[NonTerm::Statement][ID] = {
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::SEMANTIC_ACTION, "a"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex},
+        {SymbolType::TERMINAL, (int)ASSIGN},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::SEMANTIC_ACTION, ":="},
+        {SymbolType::TERMINAL, (int)SEMI}};
+    M[NonTerm::Statement][LBRACE] = {
+        {SymbolType::TERMINAL, (int)LBRACE},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Program},
+        {SymbolType::TERMINAL, (int)RBRACE}};
 
-    M[NonTerm::ElsePart][ELSE] = {{SymbolType::TERMINAL, (int)ELSE}, {SymbolType::SEMANTIC_ACTION, "2"}, {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}};
+    M[NonTerm::ElsePart][ELSE] = {
+        {SymbolType::TERMINAL, (int)ELSE},
+        {SymbolType::SEMANTIC_ACTION, "2"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Statement}};
     for (auto t : {ID, IF, WHILE, READ, WRITE, TERM, RBRACE, SEMI})
         M[NonTerm::ElsePart][t] = {};
 
     // --- 3. Expression Structure ---
-    M[NonTerm::Condition][ID] = M[NonTerm::Condition][INT] = M[NonTerm::Condition][FLOAT] = M[NonTerm::Condition][LPAR] = M[NonTerm::Condition][ADD_OP] =
-        {{SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, (int)COMP_OP}, {SymbolType::SEMANTIC_ACTION, "save_comp_op"}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::SEMANTIC_ACTION, "apply_comp_op"}};
+    M[NonTerm::Condition][ID] = M[NonTerm::Condition][INT] = M[NonTerm::Condition][FLOAT] = M[NonTerm::Condition][LPAR] = M[NonTerm::Condition][ADD_OP] = {
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)COMP_OP},
+        {SymbolType::SEMANTIC_ACTION, "save_comp_op"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::SEMANTIC_ACTION, "apply_comp_op"}};
 
     for (auto t : firstFactor)
     {
-        M[NonTerm::Expression][t] = {{SymbolType::NON_TERMINAL, (int)NonTerm::Term}, {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
-        M[NonTerm::Term][t] = {{SymbolType::NON_TERMINAL, (int)NonTerm::Factor}, {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
+        M[NonTerm::Expression][t] = {
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
+        M[NonTerm::Term][t] = {
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
     }
 
-    M[NonTerm::ExpressionTail][ADD_OP] = {{SymbolType::TERMINAL, (int)ADD_OP}, {SymbolType::SEMANTIC_ACTION, "save_add_op"}, {SymbolType::NON_TERMINAL, (int)NonTerm::Term}, {SymbolType::SEMANTIC_ACTION, "apply_add_op"}, {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
+    M[NonTerm::ExpressionTail][ADD_OP] = {
+        {SymbolType::TERMINAL, (int)ADD_OP},
+        {SymbolType::SEMANTIC_ACTION, "save_add_op"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Term},
+        {SymbolType::SEMANTIC_ACTION, "apply_add_op"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ExpressionTail}};
     for (auto t : {SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
         M[NonTerm::ExpressionTail][t] = {};
 
-    M[NonTerm::TermTail][MULT_OP] = {{SymbolType::TERMINAL, (int)MULT_OP}, {SymbolType::SEMANTIC_ACTION, "save_mult_op"}, {SymbolType::NON_TERMINAL, (int)NonTerm::Factor}, {SymbolType::SEMANTIC_ACTION, "apply_mult_op"}, {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
+    M[NonTerm::TermTail][MULT_OP] = {
+        {SymbolType::TERMINAL, (int)MULT_OP},
+        {SymbolType::SEMANTIC_ACTION, "save_mult_op"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Factor},
+        {SymbolType::SEMANTIC_ACTION, "apply_mult_op"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::TermTail}};
     for (auto t : {ADD_OP, SEMI, THEN, DO, RPAR, RBRACK, COMMA, COMP_OP, ELSE})
         M[NonTerm::TermTail][t] = {};
 
     // --- 4. Factor & Unary Logic ---
-    M[NonTerm::Factor][LPAR] = {{SymbolType::TERMINAL, (int)LPAR}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, (int)RPAR}};
-    M[NonTerm::Factor][ID] = {{SymbolType::TERMINAL, (int)ID}, {SymbolType::SEMANTIC_ACTION, "a"}, {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}};
-    M[NonTerm::Factor][INT] = {{SymbolType::TERMINAL, (int)INT}, {SymbolType::SEMANTIC_ACTION, "k"}};
-    M[NonTerm::Factor][FLOAT] = {{SymbolType::TERMINAL, (int)FLOAT}, {SymbolType::SEMANTIC_ACTION, "k"}};
-    M[NonTerm::Factor][STRING] = {{SymbolType::TERMINAL, (int)STRING}, {SymbolType::SEMANTIC_ACTION, "k"}};
+    M[NonTerm::Factor][LPAR] = {
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)RPAR}};
+    M[NonTerm::Factor][ID] = {
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::SEMANTIC_ACTION, "a"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}};
+    M[NonTerm::Factor][INT] = {
+        {SymbolType::TERMINAL, (int)INT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
+    M[NonTerm::Factor][FLOAT] = {
+        {SymbolType::TERMINAL, (int)FLOAT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
+    M[NonTerm::Factor][STRING] = {
+        {SymbolType::TERMINAL, (int)STRING},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
     M[NonTerm::Factor][ADD_OP] = {
         {SymbolType::TERMINAL, (int)ADD_OP},
         {SymbolType::SEMANTIC_ACTION, "unary_op"}, // Сохраняем знак сразу
@@ -163,31 +236,63 @@ void Parser::initMatrix()
     }
 
     // UnaryOperand (что может идти после унарного минуса)
-    M[NonTerm::UnaryOperand][LPAR] = {{SymbolType::TERMINAL, (int)LPAR}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, (int)RPAR}};
-    M[NonTerm::UnaryOperand][ID] = {{SymbolType::TERMINAL, (int)ID}, {SymbolType::SEMANTIC_ACTION, "a"}, {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}};
-    M[NonTerm::UnaryOperand][INT] = {{SymbolType::TERMINAL, (int)INT}, {SymbolType::SEMANTIC_ACTION, "k"}};
-    M[NonTerm::UnaryOperand][FLOAT] = {{SymbolType::TERMINAL, (int)FLOAT}, {SymbolType::SEMANTIC_ACTION, "k"}};
+    M[NonTerm::UnaryOperand][LPAR] = {
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)RPAR}};
+    M[NonTerm::UnaryOperand][ID] = {
+        {SymbolType::TERMINAL, (int)ID},
+        {SymbolType::SEMANTIC_ACTION, "a"},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayIndex}};
+    M[NonTerm::UnaryOperand][INT] = {
+        {SymbolType::TERMINAL, (int)INT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
+    M[NonTerm::UnaryOperand][FLOAT] = {
+        {SymbolType::TERMINAL, (int)FLOAT},
+        {SymbolType::SEMANTIC_ACTION, "k"}};
     for (auto f : {SIN, COS, EXP, POW, LOG, TAN, CTAN})
     {
-        M[NonTerm::UnaryOperand][f] = {{SymbolType::NON_TERMINAL, (int)NonTerm::MathFunction}};
+        M[NonTerm::UnaryOperand][f] = {
+            {SymbolType::NON_TERMINAL, (int)NonTerm::MathFunction}};
     }
 
     // --- 5. Arrays ---
-    M[NonTerm::ArrayIndex][LBRACK] = {{SymbolType::TERMINAL, (int)LBRACK}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayTail}};
+    M[NonTerm::ArrayIndex][LBRACK] = {
+        {SymbolType::TERMINAL, (int)LBRACK},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::ArrayTail}};
     for (auto t : {ASSIGN, SEMI, ADD_OP, MULT_OP, COMP_OP, RPAR, COMMA, THEN, DO, ELSE, RBRACK})
         M[NonTerm::ArrayIndex][t] = {};
 
-    M[NonTerm::ArrayTail][RBRACK] = {{SymbolType::SEMANTIC_ACTION, "INDEX1"}, {SymbolType::TERMINAL, (int)RBRACK}};
-    M[NonTerm::ArrayTail][COMMA] = {{SymbolType::TERMINAL, (int)COMMA}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::SEMANTIC_ACTION, "INDEX2"}, {SymbolType::TERMINAL, (int)RBRACK}};
+    M[NonTerm::ArrayTail][RBRACK] = {
+        {SymbolType::SEMANTIC_ACTION, "INDEX1"},
+        {SymbolType::TERMINAL, (int)RBRACK}};
+    M[NonTerm::ArrayTail][COMMA] = {
+        {SymbolType::TERMINAL, (int)COMMA},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::SEMANTIC_ACTION, "INDEX2"},
+        {SymbolType::TERMINAL, (int)RBRACK}};
 
     // --- 6. Math Functions ---
     // Для функций с 1 аргументом
     for (auto f : {std::make_pair(SIN, "SIN"), std::make_pair(COS, "COS"), std::make_pair(EXP, "EXP"), std::make_pair(LOG, "LOG"), std::make_pair(TAN, "TAN"), std::make_pair(CTAN, "CTAN")})
     {
-        M[NonTerm::MathFunction][f.first] = {{SymbolType::TERMINAL, (int)f.first}, {SymbolType::TERMINAL, (int)LPAR}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, (int)RPAR}, {SymbolType::SEMANTIC_ACTION, f.second}};
+        M[NonTerm::MathFunction][f.first] = {
+            {SymbolType::TERMINAL, (int)f.first},
+            {SymbolType::TERMINAL, (int)LPAR},
+            {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+            {SymbolType::TERMINAL, (int)RPAR},
+            {SymbolType::SEMANTIC_ACTION, f.second}};
     }
     // Для power (2 аргумента)
-    M[NonTerm::MathFunction][POW] = {{SymbolType::TERMINAL, (int)POW}, {SymbolType::TERMINAL, (int)LPAR}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, (int)COMMA}, {SymbolType::NON_TERMINAL, (int)NonTerm::Expression}, {SymbolType::TERMINAL, (int)RPAR}, {SymbolType::SEMANTIC_ACTION, "POW"}};
+    M[NonTerm::MathFunction][POW] = {
+        {SymbolType::TERMINAL, (int)POW},
+        {SymbolType::TERMINAL, (int)LPAR},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)COMMA},
+        {SymbolType::NON_TERMINAL, (int)NonTerm::Expression},
+        {SymbolType::TERMINAL, (int)RPAR},
+        {SymbolType::SEMANTIC_ACTION, "POW"}};
 }
 
 void Parser::initSemanticTable()
@@ -488,7 +593,6 @@ void Parser::pushProduction(NonTerm nt, LexemType lt)
         // Обработка ошибок или lambda, если правило пустое
         if (M.count(nt) && M[nt].count((LexemType)extType) && M[nt][(LexemType)extType].empty())
         {
-            // Lambda transition, do nothing
             return;
         }
 

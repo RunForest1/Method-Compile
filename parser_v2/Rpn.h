@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
-// Типы элементов ОПС согласно спецификации
+// Типы элементов ОПС
 enum class RpnElementType {
-    ADDR_VAR,   // Ссылка на таблицу идентификаторов
+    ADDR_VAR,   // Переменная
     CONST_VAL,  // Константа
     OPERATOR,   // Код операции (+, :=, J, JF и т.д.)
-    LABEL       // Индекс элемента в массиве ОПС (адрес перехода)
+    LABEL       // Маркер в массиве ОПС (адрес перехода)
 };
 
 struct RpnElement {
